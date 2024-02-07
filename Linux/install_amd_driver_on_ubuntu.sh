@@ -10,7 +10,7 @@ fi
 wget -r -np -nH --cut-dirs=4 -P /tmp/ http://repo.radeon.com/amdgpu-install/latest/ubuntu/jammy/
 
 # Rename the Downloaded Package
-mv /tmp/*.deb /tmp/amdgpu-install_all.deb
+mv /tmp/amdgpu-install_*.deb /tmp/amdgpu-install_all.deb
 
 # Install AMD Driver Package
 apt-get install -y /tmp/amdgpu-install_all.deb
