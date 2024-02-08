@@ -7,13 +7,10 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Download AMD Driver from http://repo.radeon.com/amdgpu-install/latest/ubuntu/jammy/
-wget -r -np -nH --cut-dirs=4 -P /tmp/ http://repo.radeon.com/amdgpu-install/latest/ubuntu/jammy/
-
-# Rename the Downloaded Package
-mv /tmp/amdgpu-install_*.deb /tmp/amdgpu-install_all.deb
+wget -r -np -nH --cut-dirs=4 -P /tmp/ https://repo.radeon.com/amdgpu-install/23.20.00.48/ubuntu/jammy/amdgpu-install_5.7.00.48.50700-1_all.deb
 
 # Install AMD Driver Package
-apt-get install -y /tmp/amdgpu-install_all.deb
+apt-get install -y /tmp/amdgpu-install_5.7.00.48.50700-1_all.deb
 
 # Install AMD Driver for Graphics and ROCm
 ## replace graphics with workstation if you are using a Workstation Graphich Card
