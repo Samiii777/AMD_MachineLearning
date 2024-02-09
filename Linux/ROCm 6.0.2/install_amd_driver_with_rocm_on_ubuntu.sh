@@ -7,7 +7,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Download AMD Driver from http://repo.radeon.com/amdgpu-install/latest/ubuntu/jammy/
-wget -r -np -nH --cut-dirs=4 -P /tmp/ https://repo.radeon.com/amdgpu-install/6.0.2/ubuntu/jammy/amdgpu-install_6.0.60002-1_all.deb
+wget -r -np -nH --cut-dirs=4 -P /tmp/ http://repo.radeon.com/amdgpu-install/23.40.2/ubuntu/jammy/amdgpu-install_6.0.60002-1_all.deb
 
 # Install AMD Driver Package
 apt-get install -y /tmp/amdgpu-install_6.0.60002-1_all.deb
