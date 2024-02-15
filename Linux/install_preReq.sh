@@ -8,7 +8,7 @@ fi
 
 # Update and Install Linux to the Latest Version
 apt-get update
-# apt-get dist-upgrade -y
+apt-get dist-upgrade -y
 
 # Install SSH Server
 apt install -y openssh-server
