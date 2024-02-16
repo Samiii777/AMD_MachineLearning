@@ -21,4 +21,5 @@ sudo sh ./install_amd_driver_with_rocm_on_ubuntu.sh
 4. To install Pytorch
 ```
 sh ./install_pyTorch.sh
+sudo apt install -y libstdc++-12-dev
 ```
