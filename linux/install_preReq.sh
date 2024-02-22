@@ -1,41 +1,43 @@
 #!/bin/bash
 
-# Check if the script is running with root privileges
-if [ "$(id -u)" -ne 0 ]; then
-    echo "Please run this script with root privileges (sudo)."
-    exit 1
-fi
+###TODO 1 click install for everything including driver, pytorch and onnx
+## Everything Required for AMD ML Stuff
 
 # Update and Install Linux to the Latest Version
-apt-get update
-apt-get dist-upgrade -y
-
-# Install SSH Server
-apt install -y openssh-server
-
-# Install net-tools
-apt install -y net-tools
+sudo apt update
+sudo dist-upgrade -y
 
 # Install pip3
-apt install -y python3-pip 
+sudo apt install python3-pip -y
+pip3 install wheel setuptools
+
+# Install Libstdc++-12-dev that is required for pytorch
+sudo apt install libstdc++-12-dev -y
+
+
+
+## Extra Stuff that is not needed for everyone
+
+# Install SSH Server
+sudo apt install openssh-server -y
+
+# Install net-tools
+sudo apt install net-tools -y
 
 #Install Jupyter-lab
-snap install jupyter
-apt install -y jupyter-core
-
+sudo snap install jupyter
+sudo apt install jupyter-core
+pip3 install jupyterlab
 export PATH="$HOME/.local/bin:$PATH"
 
 # Install Git
-apt install -y git
-apt install -y git-lfs
-
-# Install Libstdc++-12-dev that is required for pytorch
-apt install -y libstdc++-12-dev
+sudo apt install git -y
+sudo apt install git-lfs -y
 
 # Install LightDM without prompts
 export DEBIAN_FRONTEND=noninteractive
 
-apt-get install -y lightdm
+sudo apt-get install lightdm -y
 
 unset DEBIAN_FRONTEND
 
