@@ -23,3 +23,7 @@ sudo sh ./install_amd_driver_with_rocm_on_ubuntu.sh
 sh ./install_pyTorch.sh
 sudo apt install -y libstdc++-12-dev
 ```
+5. To install OnnxRuntime (will install MIGraphX as well)
+```
+sudo sh ./install_OnnxRT.sh
+```
