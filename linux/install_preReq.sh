@@ -15,6 +15,8 @@ pip3 install wheel setuptools
 sudo apt install libstdc++-12-dev -y
 
 
+sudo apt install libclblast-dev
+
 
 ## Extra Stuff that is not needed for everyone
 
