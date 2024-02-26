@@ -11,6 +11,7 @@ sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
 
 # Add Go binary path to the PATH environment variable
 export PATH=$PATH:/usr/local/go/bin
+echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
 
 # Clean up downloaded file
 rm -f go${GO_VERSION}.linux-amd64.tar.gz
