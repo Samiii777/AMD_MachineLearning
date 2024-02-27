@@ -22,8 +22,8 @@ def main():
         print("Usage: python script.py [model_name]")
         sys.exit(1)
 
-    model_name = sys.argv[1] if len(sys.argv) == 2 else "llama:7b"
-    
+    model_name = sys.argv[1] if len(sys.argv) == 2 else (print("Usage: python benchmark.py model_name") or sys.exit(1))    
+
     # Define prompts for each run
     prompts = [
         "Write me a C++ code that solves the fibonacci without recursion",
