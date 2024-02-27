@@ -15,7 +15,7 @@ pip3 install wheel setuptools
 sudo apt install libstdc++-12-dev -y
 
 
-sudo apt install libclblast-dev
+sudo apt install libclblast-dev -y
 
 
 ## Extra Stuff that is not needed for everyone
@@ -28,20 +28,13 @@ sudo apt install net-tools -y
 
 #Install Jupyter-lab
 sudo snap install jupyter
-sudo apt install jupyter-core
+sudo apt install jupyter-core -y
 pip3 install jupyterlab
 export PATH="$HOME/.local/bin:$PATH"
 
 # Install Git
 sudo apt install git -y
 sudo apt install git-lfs -y
-
-# Install LightDM without prompts
-export DEBIAN_FRONTEND=noninteractive
-
-sudo apt-get install lightdm -y
-
-unset DEBIAN_FRONTEND
 
 # Prompt the user to reboot or not
 read -p "Do you want to reboot the system now? (y/n): " choice
