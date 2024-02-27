@@ -1,10 +1,15 @@
 #!/bin/bash
 
-# Download and install Go
-GO_VERSION="1.22.0"
-GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
+
+# Default Go version
+DEFAULT_GO_VERSION="1.22.0"
+
+# Use user-provided Go version if provided, otherwise use default
+GO_VERSION=${1:-$DEFAULT_GO_VERSION}
 
 # Download and install Go
+
+GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
 wget "${GO_URL}"
 sudo rm -rf /usr/local/go
 sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
