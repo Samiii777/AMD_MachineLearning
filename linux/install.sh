@@ -4,6 +4,9 @@
 ## Everything Required for AMD ML Stuff
 
 # Update and Install Linux to the Latest Version
+sudo usermod -aG render $(whoami)
+sudo usermod -aG video $(whoami)
+
 sudo apt update
 sudo dist-upgrade -y
 
@@ -13,28 +16,11 @@ pip3 install wheel setuptools
 
 # Install Libstdc++-12-dev that is required for pytorch
 sudo apt install libstdc++-12-dev -y
-
-
 sudo apt install libclblast-dev -y
 
-
-## Extra Stuff that is not needed for everyone
-
-# Install SSH Server
-sudo apt install openssh-server -y
-
-# Install net-tools
-sudo apt install net-tools -y
-
-#Install Jupyter-lab
-sudo snap install jupyter
-sudo apt install jupyter-core -y
-pip3 install jupyterlab
-export PATH="$HOME/.local/bin:$PATH"
-
-# Install Git
-sudo apt install git -y
-sudo apt install git-lfs -y
+sudo sh rocm/rocm-6.0.2/install_amd_driver_with_rocm_on_ubuntu.sh
+sudo sh rocm/rocm-6.0.2/install_pyTorch.sh
+sudo sh rocm/rocm-6.0.2/install_OnnxRT.sh
 
 # Prompt the user to reboot or not
 read -p "Do you want to reboot the system now? (y/n): " choice

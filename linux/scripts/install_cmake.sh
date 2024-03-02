@@ -12,7 +12,7 @@ URL_BASE="https://github.com/Kitware/CMake/releases/download/"
 sudo apt update
 
 # Check if libssl-dev is installed
-if dpkg -s libssl-dev &> /dev/null; then
+if dpkg -s libssl-dev > /dev/null 2>&1; then
     echo "libssl-dev is already installed."
 else
     echo "Installing libssl-dev..."
