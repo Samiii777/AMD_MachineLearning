@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#!/bin/bash
-
 # Function to extract GPU version
 getGfxVersion() {
     local gfxVersion=$(rocminfo | awk '/Agent 2/,/^  Name:/ {if ($1 == "Name:") print $2}')
