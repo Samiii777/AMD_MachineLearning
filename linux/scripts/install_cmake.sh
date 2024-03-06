@@ -12,12 +12,14 @@ URL_BASE="https://github.com/Kitware/CMake/releases/download/"
 sudo apt update
 
 # Check if libssl-dev is installed
-if dpkg -s libssl-dev > /dev/null 2>&1; then
+
+if [ "$(dpkg -l | awk '/'libssl-dev'/ {print }' | wc -l)" -ge 1 ]; then
     echo "libssl-dev is already installed."
 else
     echo "Installing libssl-dev..."
     sudo apt install libssl-dev -y
 fi
+
 # Remove the existing CMake installation
 sudo apt autoremove cmake
 sudo apt clean
