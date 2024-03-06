@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # Default Go version
 DEFAULT_GO_VERSION="1.22.0"
 
@@ -11,7 +10,15 @@ GO_VERSION=${1:-$DEFAULT_GO_VERSION}
 
 GO_URL="https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz"
 wget "${GO_URL}"
-sudo rm -rf /usr/local/go
+if [ $? -ne 0 ]; then
+    echo "Error downloading Go. Exiting."
+    exit 1
+fi
+
+if [ -d /usr/local/go ]; then
+    sudo rm -rf /usr/local/go
+fi
+
 sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
 
 # Add Go binary path to the PATH environment variable
@@ -23,3 +30,5 @@ rm -f go${GO_VERSION}.linux-amd64.tar.gz
 
 # Display Go version
 go version
+
+
