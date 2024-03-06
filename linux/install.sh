@@ -1,8 +1,5 @@
 #!/bin/bash
 
-###TODO 1 click install for everything including driver, pytorch and onnx
-## Everything Required for AMD ML Stuff
-
 # Update and Install Linux to the Latest Version
 sudo usermod -aG render $(whoami)
 sudo usermod -aG video $(whoami)
