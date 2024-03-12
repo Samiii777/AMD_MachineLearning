@@ -3,7 +3,7 @@ Everything you need to setup on your Linux system for Machine Learning Stuff wit
 
 ## Install AMD Driver with ROCm Automatically
 ```
-sh install.sh
+sh ./install.sh
 ```
 ## Install AMD Driver with ROCm Manually
 
