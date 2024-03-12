@@ -28,6 +28,7 @@ sudo sh "rocm/rocm-${rocm_version}/install_amd_driver_with_rocm_on_ubuntu.sh"
 sudo sh "rocm/rocm-${rocm_version}/install_pyTorch.sh"
 sudo sh "rocm/rocm-${rocm_version}/install_OnnxRT.sh"
 
+pip3 install -r requirements.txt
 # Prompt the user to reboot or not
 read -p "Do you want to reboot the system now? (y/n): " choice
 case "$choice" in
