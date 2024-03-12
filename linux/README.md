@@ -1,7 +1,11 @@
 # Linux
 Everything you need to setup on your Linux system for Machine Learning Stuff with AMD GPU
 
-## Install AMD Driver with ROCm
+## Install AMD Driver with ROCm Automatically
+```
+sh install.sh
+```
+## Install AMD Driver with ROCm Manually
 
 1. First we need to update our Kernel Version to the latest one
 ```
