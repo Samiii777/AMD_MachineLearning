@@ -6,7 +6,7 @@ This guide includes both automatic and manual installation methods for setting u
 
 ### Automatic Installation
 
-To automatically install the AMD driver with ROCm, simply run the following command:
+To automatically install the AMD driver with ROCm, PyTorch and ONNXRuntime simply run the following command:
 
 ```bash
 sh ./install.sh [ROCM_VERSION]
