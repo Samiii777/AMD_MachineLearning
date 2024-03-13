@@ -24,8 +24,8 @@ def run_benchmarking(params):
     pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=precision)
     pipe = pipe.to("cuda")
 
-    prompt = "a photo of an astronaut riding a horse on mars"
-
+    prompt = "A photograph of an astronaut riding a horse on Mars, high resolution, high definition."
+    
     tm = time.time()
     for i in range(iterations):
         image = pipe(prompt).images[0]
