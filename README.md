@@ -1,30 +1,9 @@
 # AMD_MachineLearning
-Everything you need to setup on your AMD system for Machine Learning Stuff
 
-# [Linux](https://github.com/Samiii777/AMD_MachineLearning/tree/main/linux)
+Welcome to the AMD_MachineLearning repository! This repository provides a collection of scripts and guides to help you set up your AMD system for machine learning tasks. Whether you're a beginner or an experienced user, this repository aims to simplify the process of installing essential tools and drivers for running machine learning workloads on AMD hardware.
 
-## Install AMD Driver with ROCm
+## [Linux](https://github.com/Samiii777/AMD_MachineLearning/tree/main/linux)
 
-1. First we need to update our Kernel Version to the latest one
-```
-sudo apt update
-sudo apt dist-upgrade -y
-```
-2. Run below commands manually in terminal and reboot the system
-```
-sudo usermod -aG render $LOGNAME
-sudo usermod -aG video $LOGNAME
-```
-3. Then Simply run below bash file from the corresponding desired ROCm version folder
-```
-cd ROCm-6.0.2
-sudo sh ./install_amd_driver_with_rocm_on_ubuntu.sh
-```
-4. To install Pytorch
-```
-sh ./install_pyTorch.sh
-```
-5. To install OnnxRuntime (will install MIGraphX as well)
-```
-sh ./install_OnnxRT.sh
-```
+In the Linux folder, you'll find instructions and scripts for installing the AMD driver with ROCm, as well as popular machine learning frameworks such as PyTorch and OnnxRuntime.
+
+Let's get started!
