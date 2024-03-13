@@ -1,11 +1,22 @@
-# Linux
-Everything you need to setup on your Linux system for Machine Learning Stuff with AMD GPU
+## Overview
 
-## Install AMD Driver with ROCm Automatically
+This guide includes both automatic and manual installation methods for setting up the AMD driver with ROCm, along with installation instructions for popular machine learning frameworks such as PyTorch and OnnxRuntime.
+
+## Installation
+
+### Automatic Installation
+
+To automatically install the AMD driver with ROCm, simply run the following command:
+
+```bash
+sh ./install.sh [ROCM_VERSION]
 ```
-sh ./install.sh
-```
-## Install AMD Driver with ROCm Manually
+###### Arguments
+
+- `[ROCM_VERSION]`: Specify the ROCm version to install. If not provided, the default version `6.0.2` will be used.
+
+
+### Manual Installation
 
 1. First we need to update our Kernel Version to the latest one
 ```
