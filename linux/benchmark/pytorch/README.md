@@ -10,5 +10,5 @@ This script benchmarks the performance of the Stable Diffusion Pipeline model us
 
 ## Usage
 
-   ```bash
-    python3 benchmark.py --iterations 20 --precision fp16
+```bash
+python3 benchmark.py --model runwayml/stable-diffusion-v1-5 --iterations 20 --precision fp16
