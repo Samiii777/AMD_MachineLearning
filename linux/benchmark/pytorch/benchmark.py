@@ -16,7 +16,10 @@ def run_benchmarking(params):
     else:
         torch.cuda.set_device("cuda:0")
 
-    model_id = "runwayml/stable-diffusion-v1-5"
+    model_id = "runwayml/stable-diffusion-v1-5"  # Default model ID
+    if params.model:
+        model_id = params.model
+
     precision = torch.float32 if params.precision == 'fp32' else torch.float16
     pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=precision)
     pipe = pipe.to("cuda")
@@ -34,6 +37,7 @@ def run_benchmarking(params):
     print("OK: finished running benchmark..")
     print("--------------------SUMMARY--------------------------")
     print("Benchmark for Stable Diffusion Pipeline")
+    print("Model: {}".format(model_id))
     print("Num devices: {}".format(ngpus))
     print("Mini batch size [img] : {}".format(batch_size))
     print("Time per inference : {}".format(time_per_inference))
@@ -41,6 +45,7 @@ def run_benchmarking(params):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model", type=str, required=False, help="Model ID for the Stable Diffusion Pipeline")
     parser.add_argument("--iterations", type=int, required=False, default=20, help="Iterations")
     parser.add_argument("--device_ids", type=str, required=False, default=None, help="Comma-separated list (no spaces) to specify which HIP devices (0-indexed) to run dataparallel or distributedDataParallel api on.")
     parser.add_argument("--precision", type=str, required=False, default='fp16', choices=['fp16', 'fp32'], help="Precision for inference (choose between fp16 or fp32)")
