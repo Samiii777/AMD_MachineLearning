@@ -25,14 +25,17 @@ def run_benchmarking(params):
     pipe = pipe.to("cuda")
 
     prompt = "A photograph of an astronaut riding a horse on Mars, high resolution, high definition."
-    
+
+    # Perform a dry run (skip timing for the first iteration)
+    pipe(prompt).images[0]
+
     tm = time.time()
-    for i in range(iterations):
+    for i in range(iterations - 2):  # Exclude the first two iteration from timing
         image = pipe(prompt).images[0]
     torch.cuda.synchronize()
     tm2 = time.time()
 
-    time_per_inference = (tm2 - tm) / iterations
+    time_per_inference = (tm2 - tm) / (iterations - 2)  # Exclude the first two iteration from timing
 
     print("OK: finished running benchmark..")
     print("--------------------SUMMARY--------------------------")
@@ -46,7 +49,7 @@ def run_benchmarking(params):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=False, help="Model ID for the Stable Diffusion Pipeline")
-    parser.add_argument("--iterations", type=int, required=False, default=20, help="Iterations")
+    parser.add_argument("--iterations", type=int, required=False, default=5, help="Iterations")
     parser.add_argument("--device_ids", type=str, required=False, default=None, help="Comma-separated list (no spaces) to specify which HIP devices (0-indexed) to run dataparallel or distributedDataParallel api on.")
     parser.add_argument("--precision", type=str, required=False, default='fp16', choices=['fp16', 'fp32'], help="Precision for inference (choose between fp16 or fp32)")
     args = parser.parse_args()
@@ -55,3 +58,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
