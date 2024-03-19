@@ -1,5 +1,6 @@
 #!/bin/bash
 
+## TODO - Create a logging
 # Default ROCm version
 rocm_version="6.0.2"
 
@@ -19,6 +20,7 @@ sudo dist-upgrade -y
 sudo apt install python3-pip -y
 pip3 install wheel setuptools
 
+## TODO - Create a package checker function
 # Install Libstdc++-12-dev that is required for pytorch
 sudo apt install libstdc++-12-dev -y
 sudo apt install libclblast-dev -y
