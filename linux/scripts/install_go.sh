@@ -31,4 +31,6 @@ rm -f go${GO_VERSION}.linux-amd64.tar.gz
 # Display Go version
 go version
 
+echo "Please restart your terminal!"
+
 
