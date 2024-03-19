@@ -1,5 +1,4 @@
 import argparse
-import sys
 import time
 import torch
 from diffusers import StableDiffusionPipeline
