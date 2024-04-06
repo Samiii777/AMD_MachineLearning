@@ -14,7 +14,7 @@ sudo usermod -aG render $(whoami)
 sudo usermod -aG video $(whoami)
 
 sudo apt update
-sudo dist-upgrade -y
+sudo apt dist-upgrade -y
 
 # Install pip3
 sudo apt install python3-pip -y
