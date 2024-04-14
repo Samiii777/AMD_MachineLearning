@@ -9,10 +9,11 @@ if [ $# -eq 1 ]; then
   rocm_version=$1
 fi
 
-# Update and Install Linux to the Latest Version
+# Add user to render and video group
 sudo usermod -aG render $(whoami)
 sudo usermod -aG video $(whoami)
 
+# Update and Upgrade Packages
 sudo apt update
 sudo apt dist-upgrade -y
 
