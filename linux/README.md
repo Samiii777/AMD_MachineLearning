@@ -18,7 +18,7 @@ sh ./install.sh [ROCM_VERSION]
 
 ### Manual Installation
 
-1. First we need to update our Kernel Version to the latest one
+1. First we need to update our packages
 ```
 sudo apt update
 sudo apt dist-upgrade -y
