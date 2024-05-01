@@ -35,12 +35,24 @@ getRocmVersion() {
     fi
 }
 
-# Function to check and print all information
-checkAndPrintInfo() {
-    getRocmVersion
-    getGfxVersion
-    getMarketingName
+
+
+getAmdGPUVersion() {
+    local amdgpuVersion=$(modinfo amdgpu | grep -i version | awk -F': ' 'NR==1 {gsub(/^[ \t]+/,"",$2); print $2; exit}')
+
+    # Check and print AMDGPU version
+    if [ -n "$amdgpuVersion" ]; then
+        echo "AMDGPU driver version: $amdgpuVersion"
+    else
+        echo "Unable to determine AMDGPU driver version."
+    fi
 }
 
-# Call the function to check and print all information
-checkAndPrintInfo
+
+getRocmVersion
+getGfxVersion
+getMarketingName
+getAmdGPUVersion
+
+
+
