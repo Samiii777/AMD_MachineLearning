@@ -2,6 +2,9 @@
 
 ## TODO - Create a logging
 # Default ROCm version
+
+amdgpu-uninstall -y
+
 rocm_version="6.1.3"
 
 # Check if a version argument is provided
@@ -28,8 +31,9 @@ sudo apt install libclblast-dev -y
 
 # Install ROCm with the specified version
 sudo sh "rocm/rocm-${rocm_version}/install_amd_driver_with_rocm_on_ubuntu.sh"
-sudo sh "rocm/rocm-${rocm_version}/install_pyTorch.sh"
-sudo sh "rocm/rocm-${rocm_version}/install_OnnxRT.sh"
+sudo sh "rocm/rocm-${rocm_version}/install_pytorch.sh"
+sudo sh "rocm/rocm-${rocm_version}/install_onnxruntime.sh"
+sudo sh "rocm/rocm-${rocm_version}/install_tensorflow.sh"
 
 pip3 install -r requirements.txt
 # Prompt the user to reboot or not
