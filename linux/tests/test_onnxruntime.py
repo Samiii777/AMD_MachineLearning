@@ -1,5 +1,7 @@
 import onnxruntime as ort
 
+print("Onnxruntime version:", ort.__version__)
+
 providers = ort.get_available_providers()
 
 if 'ROCMExecutionProvider' in providers and 'MIGraphXExecutionProvider' in providers:
