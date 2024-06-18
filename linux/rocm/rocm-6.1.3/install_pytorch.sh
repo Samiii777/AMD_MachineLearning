@@ -22,5 +22,3 @@ pip3 install torch-2.1.2+rocm6.1.3-cp310-cp310-linux_x86_64.whl torchvision-0.16
 
 # Clean up downloaded files
 rm torch*.whl pytorch*.whl
-
-python3 tests/test_pytorch.py

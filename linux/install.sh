@@ -37,6 +37,10 @@ sudo sh "rocm/rocm-${rocm_version}/install_tensorflow.sh"
 
 pip3 install -r requirements.txt
 # Prompt the user to reboot or not
+python3 tests/test_pytorch.py
+python3 tests/test_onnxruntime.py
+python3 tests/test_tensorflow.py
+
 read -p "Do you want to reboot the system now? (y/n): " choice
 case "$choice" in
   y|Y )
