@@ -9,29 +9,26 @@ import argparse
 import time
 
 def exportToOnnx():
+  try:
+    resnet50 = models.resnet50(weights='ResNet50_Weights.DEFAULT')
+    # Export the model to ONNX
+    image_height = 224
+    image_width = 224
+    x = torch.randn(1, 3, image_height, image_width, requires_grad=True)
+    torch_out = resnet50(x)
+  
+    torch.onnx.export(resnet50,                     # model being run
+                      x,                            # model input (or a tuple for multiple inputs)
+                      "resnet50.onnx",              # where to save the model (can be a file or file-like object)
+                      export_params=True,           # store the trained parameter weights inside the model file
+                      opset_version=12,             # the ONNX version to export the model to
+                      do_constant_folding=True,     # whether to execute constant folding for optimization
+                      input_names=['input'],        # the model's input names
+                      output_names=['output'])      # the model's output names
+    print("ResNet50 model successfully exported to ONNX format.")
+  except Exception as e:
+    print(f"Error exporting ResNet50 model to ONNX format: {e}")
 
-  resnet50 = models.resnet50(weights='ResNet50_Weights.DEFAULT')
-
-  # Check if imagenet_classes.txt exists, otherwise download it
-  if not os.path.exists("imagenet_classes.txt"):
-      print("Downloading imagenet_classes.txt...")
-      url = "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt"
-      urllib.request.urlretrieve(url, "imagenet_classes.txt")
-      print("imagenet_classes.txt downloaded.")
-
-      # Export the model to ONNX
-  image_height = 224
-  image_width = 224
-  x = torch.randn(1, 3, image_height, image_width, requires_grad=True)
-  torch_out = resnet50(x)
-  torch.onnx.export(resnet50,                     # model being run
-                    x,                            # model input (or a tuple for multiple inputs)
-                    "resnet50.onnx",              # where to save the model (can be a file or file-like object)
-                    export_params=True,           # store the trained parameter weights inside the model file
-                    opset_version=12,             # the ONNX version to export the model to
-                    do_constant_folding=True,     # whether to execute constant folding for optimization
-                    input_names = ['input'],      # the model's input names
-                    output_names = ['output'])    # the model's output names
 
 def get_default_provider():
     available_providers = onnxruntime.get_available_providers()
@@ -46,6 +43,13 @@ def get_default_provider():
 
 def onnxInference(params):
   # Inference with ONNX Runtime
+  # Check if imagenet_classes.txt exists, otherwise download it
+  if not os.path.exists("imagenet_classes.txt"):
+      print("Downloading imagenet_classes.txt...")
+      url = "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt"
+      urllib.request.urlretrieve(url, "imagenet_classes.txt")
+      print("imagenet_classes.txt downloaded.")
+      
   # Check if dog.jpg exists, otherwise download it
   if not os.path.exists("dog.jpg"):
       print("Downloading dog.jpg...")
@@ -111,8 +115,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--EP", type=str, required=False, help="Execution Provider: ROCm, MIGraphX, CPU")
     args = parser.parse_args()
-
-    exportToOnnx()
+    if not os.path.exists("resnet50.onnx"):
+      print("Resnet50.onnx model has NOT been found, Exporting Resnet50 from Pytorch to Onnx format...!")
+      exportToOnnx()
+    else:
+       print("Resnet50.onnx model has been found, running the inference")
     onnxInference(args)
 
 if __name__ == '__main__':
