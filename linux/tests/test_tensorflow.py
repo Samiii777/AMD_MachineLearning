@@ -3,8 +3,6 @@ import tensorflow as tf
 # Check if GPU is available through TensorFlow
 if tf.config.list_physical_devices('GPU'):
     print("GPU is available.")
-    print("Installed version of TensorFlow:")
-    print(tf.__version__)
     print("Installed version of TensorFlow-GPU:")
     print(tf.version.VERSION)
 else:
