@@ -15,3 +15,6 @@ apt-get install -y /tmp/amdgpu-install_6.1.60103-1_all.deb
 # Install AMD Driver for Graphics and ROCm
 ## replace graphics with workstation if you are using a Workstation Graphich Card
 amdgpu-install -y --usecase=graphics,rocm
+
+pip3 uninstall numpy -y
+pip3 install numpy==1.26.4
