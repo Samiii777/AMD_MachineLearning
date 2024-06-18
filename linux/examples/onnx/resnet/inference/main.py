@@ -42,74 +42,84 @@ def get_default_provider():
 
 
 def onnxInference(params):
-  # Inference with ONNX Runtime
-  # Check if imagenet_classes.txt exists, otherwise download it
-  if not os.path.exists("imagenet_classes.txt"):
-      print("Downloading imagenet_classes.txt...")
-      url = "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt"
-      urllib.request.urlretrieve(url, "imagenet_classes.txt")
-      print("imagenet_classes.txt downloaded.")
-      
-  # Check if dog.jpg exists, otherwise download it
-  if not os.path.exists("dog.jpg"):
-      print("Downloading dog.jpg...")
-      url = "https://github.com/pytorch/hub/raw/master/images/dog.jpg"
-      urllib.request.urlretrieve(url, "dog.jpg")
-      print("dog.jpg downloaded.")
+    """
+    Perform inference using the ONNX Runtime.
+    """
+    download_file("https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt", "imagenet_classes.txt")
+    download_file("https://github.com/pytorch/hub/raw/master/images/dog.jpg", "dog.jpg")
 
-  with open("imagenet_classes.txt", "r") as f:
-    categories = [s.strip() for s in f.readlines()]
+    categories = load_categories("imagenet_classes.txt")
+    input_batch = preprocess_image("dog.jpg")
 
-  input_image = Image.open("dog.jpg")
-  preprocess = transforms.Compose([
-      transforms.Resize(256),
-      transforms.CenterCrop(224),
-      transforms.ToTensor(),
-      transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
-  
-  if params.EP:
-      EP = params.EP.lower()
-  else:
-      EP = get_default_provider()
+    if params.EP:
+        EP = params.EP.lower()
+    else:
+        EP = get_default_provider()
 
-  if EP == 'rocm':
-      session_fp32 = onnxruntime.InferenceSession("resnet50.onnx", providers=['ROCMExecutionProvider'])
-  elif EP == 'migraphx':
-      session_fp32 = onnxruntime.InferenceSession("resnet50.onnx", providers=['MIGraphXExecutionProvider'])
-  elif EP == 'cpu':
-      session_fp32 = onnxruntime.InferenceSession("resnet50.onnx", providers=['CPUExecutionProvider'])
-  else:
-      raise ValueError(f"Invalid execution provider: {EP}")
+    if EP == 'rocm':
+        session_fp32 = onnxruntime.InferenceSession("resnet50.onnx", providers=['ROCMExecutionProvider'])
+    elif EP == 'migraphx':
+        session_fp32 = onnxruntime.InferenceSession("resnet50.onnx", providers=['MIGraphXExecutionProvider'])
+    elif EP == 'cpu':
+        session_fp32 = onnxruntime.InferenceSession("resnet50.onnx", providers=['CPUExecutionProvider'])
+    else:
+        raise ValueError(f"Invalid execution provider: {EP}")
 
-  def softmax(x):
-      """Compute softmax values for each sets of scores in x."""
-      e_x = np.exp(x - np.max(x))
-      return e_x / e_x.sum()
-  
-  latency = []
+    latency = []
+    input_arr = input_batch.cpu().detach().numpy()
+    ort_outputs = session_fp32.run(None, {'input': input_arr})[0]
+    torch.cuda.synchronize()
+    start = time.time()
+    ort_outputs = session_fp32.run(None, {'input': input_arr})[0]
+    torch.cuda.synchronize()
+    latency.append(time.time() - start)
 
-  input_tensor = preprocess(input_image)
-  input_batch = input_tensor.unsqueeze(0) # create a mini-batch as expected by the model
-  input_arr = input_batch.cpu().detach().numpy()
+    output = ort_outputs.flatten()
+    output = softmax(output)
+    top5_catid = np.argsort(-output)[:5]
+    for catid in top5_catid:
+        print(categories[catid], output[catid])
 
-  
-  ort_outputs = session_fp32.run(None, {'input': input_arr})[0]
-  torch.cuda.synchronize()
-  start = time.time()
-  ort_outputs = session_fp32.run(None, {'input': input_arr})[0]
-  torch.cuda.synchronize()
-  latency.append(time.time() - start)
-  
-  output = ort_outputs.flatten()
-  output = softmax(output)  # this is optional
-  top5_catid = np.argsort(-output)[:5]
-  for catid in top5_catid:
-    print(categories[catid], output[catid])
+    print(f"ONNX Runtime with {EP} Inference time = {format(sum(latency) * 1000 / len(latency), '.2f')} ms")
 
-  print("ONNX Runtime with {} Inference time = {} ms".format(EP, format(sum(latency) * 1000 / len(latency), '.2f')))
+def download_file(url, filename):
+    """
+    Download a file from the given URL and save it with the specified filename.
+    """
+    if not os.path.exists(filename):
+        print(f"Downloading {filename}...")
+        urllib.request.urlretrieve(url, filename)
+        print(f"{filename} downloaded.")
 
+def load_categories(filename):
+    """
+    Load the categories from the given file.
+    """
+    with open(filename, "r") as f:
+        categories = [s.strip() for s in f.readlines()]
+    return categories
 
+def preprocess_image(image_path):
+    """
+    Preprocess the input image for inference.
+    """
+    input_image = Image.open(image_path)
+    preprocess = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+    input_tensor = preprocess(input_image)
+    input_batch = input_tensor.unsqueeze(0)
+    return input_batch
+
+def softmax(x):
+    """
+    Compute softmax values for each set of scores in x.
+    """
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -119,7 +129,7 @@ def main():
       print("Resnet50.onnx model has NOT been found, Exporting Resnet50 from Pytorch to Onnx format...!")
       exportToOnnx()
     else:
-       print("Resnet50.onnx model has been found, running the inference")
+      print("Resnet50.onnx model has been found, running the inference")
     onnxInference(args)
 
 if __name__ == '__main__':
