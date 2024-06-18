@@ -2,7 +2,7 @@
 
 ## TODO - Create a logging
 # Default ROCm version
-rocm_version="6.0.2"
+rocm_version="6.1.3"
 
 # Check if a version argument is provided
 if [ $# -eq 1 ]; then
