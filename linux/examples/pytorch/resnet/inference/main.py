@@ -4,6 +4,7 @@ from PIL import Image
 import urllib
 import os
 import argparse
+import time
 
 def run_inference(params):
 
@@ -50,12 +51,22 @@ def run_inference(params):
   if torch.cuda.is_available():
       input_batch = input_batch.to('cuda:0')
       model.to('cuda:0')
-  
-  # Perform inference
+
+ # warm-up run to load model and data onto gpu first
   with torch.no_grad():
       output = model(input_batch)
-  
-  # Calculate probabilities and print top predictions
+
+ # perform inference and record time
+  latency = []
+  torch.cuda.synchronize()
+  start = time.time()
+  with torch.no_grad():
+      output = model(input_batch)
+  torch.cuda.synchronize()
+  end = time.time()
+  latency.append(end - start)
+   
+ # Calculate probabilities and print top predictions
   probabilities = torch.nn.functional.softmax(output[0], dim=0)
   with open("imagenet_classes.txt", "r") as f:
       categories = [s.strip() for s in f.readlines()]
@@ -64,6 +75,7 @@ def run_inference(params):
   for i in range(top5_prob.size(0)):
      print(categories[top5_catid[i]], top5_prob[i].item())
 
+  print("PyTorch Inference Time = {} ms\n".format(format(sum(latency) * 1000 / len(latency), '.2f')))
 
 def main():
     parser = argparse.ArgumentParser()
