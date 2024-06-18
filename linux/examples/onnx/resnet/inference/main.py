@@ -1,4 +1,4 @@
-from torchvision import models, datasets, transforms
+from torchvision import models, transforms
 import torch
 from PIL import Image
 import numpy as np
