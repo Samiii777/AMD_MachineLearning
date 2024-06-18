@@ -3,7 +3,7 @@ import onnxruntime as ort
 providers = ort.get_available_providers()
 
 if 'ROCMExecutionProvider' in providers and 'MIGraphXExecutionProvider' in providers:
-    print("Onnx runtime has been installed successfully with both ROCm and MIGraphX providers.")
+    print("Onnx runtime is installed successfully with both ROCm and MIGraphX providers.")
 else:
     missing_providers = []
     if 'ROCMExecutionProvider' not in providers:
