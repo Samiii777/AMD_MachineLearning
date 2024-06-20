@@ -35,9 +35,13 @@ sudo sh ./install_amd_driver_with_rocm_on_ubuntu.sh
 ```
 4. To install Pytorch
 ```
-sh ./install_pyTorch.sh
+sh ./install_pytorch.sh
 ```
 5. To install OnnxRuntime (will install MIGraphX as well)
 ```
-sh ./install_OnnxRT.sh
+sh ./install_onnxruntime.sh
+```
+6. To install TensorFlow
+```
+sh ./install_tensorflow.sh
 ```
