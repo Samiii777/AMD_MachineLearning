@@ -141,22 +141,22 @@ MODEL_FILES = {
         },
         "Instruct": {
             "8B": {
-                "repo_id": "QuantFactory/Meta-Llama-3-Instruct-8B-GGUF",
+                "repo_id": "QuantFactory/Meta-Llama-3-8B-Instruct-GGUF",
                 "files": [
-                    # "llama-3-instruct-8b.Q2_K.gguf",
-                    # "llama-3-instruct-8b.Q3_K_L.gguf",
-                    # "llama-3-instruct-8b.Q3_K_M.gguf",
-                    # "llama-3-instruct-8b.Q3_K_S.gguf",
-                    # "llama-3-instruct-8b.Q4_0.gguf",
-                    # "llama-3-instruct-8b.Q4_1.gguf",
-                    # "llama-3-instruct-8b.Q4_K_M.gguf",
-                    # "llama-3-instruct-8b.Q4_K_S.gguf",
-                    # "llama-3-instruct-8b.Q5_0.gguf",
-                    # "llama-3-instruct-8b.Q5_1.gguf",
-                    # "llama-3-instruct-8b.Q5_K_M.gguf",
-                    # "llama-3-instruct-8b.Q5_K_S.gguf",
-                    # "llama-3-instruct-8b.Q6_K.gguf",
-                    # "llama-3-instruct-8b.Q8_0.gguf"
+                    "Meta-Llama-3-8B-Instruct.Q2_K.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q3_K_L.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q3_K_M.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q3_K_S.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q4_0.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q4_1.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q4_K_S.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q5_0.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q5_1.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q5_K_M.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q5_K_S.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q6_K.gguf",
+                    "Meta-Llama-3-8B-Instruct.Q8_0.gguf"
                 ]
             },
             "13B": {
@@ -253,7 +253,7 @@ for model_type in model_types:
                 for file in files:
                     file_path = os.path.join("models", file)
                     print(f"\nRunning llama-bench with model: {file}")
-                    bench_command = f"./llama-bench -m {file_path} -r 1 -o md"
+                    bench_command = f"./llama-bench -m {file_path}"
                     with open(BENCHMARK_FILE, "a") as f:
                         subprocess.run(bench_command, shell=True, cwd=LLAMACPP_DIR, stdout=f, stderr=subprocess.DEVNULL)
 
