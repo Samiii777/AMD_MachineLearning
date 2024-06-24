@@ -29,116 +29,23 @@ MODEL_FILES = {
             "7B": {
                 "repo_id": "TheBloke/Llama-2-7B-Chat-GGUF",
                 "files": [
-                    "llama-2-chat-7b.Q2_K.gguf",
-                    # "llama-2-chat-7b.Q3_K_L.gguf",
-                    # "llama-2-chat-7b.Q3_K_M.gguf",
-                    # "llama-2-chat-7b.Q3_K_S.gguf",
-                    # "llama-2-chat-7b.Q4_0.gguf",
-                    # "llama-2-chat-7b.Q4_K_M.gguf",
-                    # "llama-2-chat-7b.Q4_K_S.gguf",
-                    # "llama-2-chat-7b.Q5_0.gguf",
-                    # "llama-2-chat-7b.Q5_K_M.gguf",
-                    # "llama-2-chat-7b.Q5_K_S.gguf",
-                    # "llama-2-chat-7b.Q6_K.gguf",
-                    # "llama-2-chat-7b.Q8_0.gguf"
+                    "llama-2-7b-chat.Q2_K.gguf",
+                     "llama-2-7b-chat.Q3_K_L.gguf",
+                     "llama-2-7b-chat.Q3_K_M.gguf",
+                     "llama-2-7b-chat.Q3_K_S.gguf",
+                     "llama-2-7b-chat.Q4_0.gguf",
+                     "llama-2-7b-chat.Q4_K_M.gguf",
+                     "llama-2-7b-chat.Q4_K_S.gguf",
+                     "llama-2-7b-chat.Q5_0.gguf",
+                     "llama-2-7b-chat.Q5_K_M.gguf",
+                     "llama-2-7b-chat.Q5_K_S.gguf",
+                     "llama-2-7b-chat.Q6_K.gguf",
+                     "llama-2-7b-chat.Q8_0.gguf"
                 ]
             },
-            "13B": {
-                "repo_id": "QuantFactory/Meta-Llama-2-Chat-13B-GGUF",
-                "files": [
-                    # "llama-2-chat-13b.Q2_K.gguf",
-                    # "llama-2-chat-13b.Q3_K_L.gguf",
-                    # "llama-2-chat-13b.Q3_K_M.gguf",
-                    # "llama-2-chat-13b.Q3_K_S.gguf",
-                    # "llama-2-chat-13b.Q4_0.gguf",
-                    # "llama-2-chat-13b.Q4_K_M.gguf",
-                    # "llama-2-chat-13b.Q4_K_S.gguf",
-                    # "llama-2-chat-13b.Q5_0.gguf",
-                    # "llama-2-chat-13b.Q5_K_M.gguf",
-                    # "llama-2-chat-13b.Q5_K_S.gguf",
-                    # "llama-2-chat-13b.Q6_K.gguf",
-                    # "llama-2-chat-13b.Q8_0.gguf"
-                ]
-            }
         },
-        "Instruct": {
-            "7B": {
-                "repo_id": "TheBloke/Llama-2-Instruct-7B-GGUF",
-                "files": [
-                    # "llama-2-instruct-7b.Q2_K.gguf",
-                    # "llama-2-instruct-7b.Q3_K_L.gguf",
-                    # "llama-2-instruct-7b.Q3_K_M.gguf",
-                    # "llama-2-instruct-7b.Q3_K_S.gguf",
-                    # "llama-2-instruct-7b.Q4_0.gguf",
-                    # "llama-2-instruct-7b.Q4_K_M.gguf",
-                    # "llama-2-instruct-7b.Q4_K_S.gguf",
-                    # "llama-2-instruct-7b.Q5_0.gguf",
-                    # "llama-2-instruct-7b.Q5_K_M.gguf",
-                    # "llama-2-instruct-7b.Q5_K_S.gguf",
-                    # "llama-2-instruct-7b.Q6_K.gguf",
-                    # "llama-2-instruct-7b.Q8_0.gguf"
-                ]
-            },
-            "13B": {
-                "repo_id": "QuantFactory/Meta-Llama-2-Instruct-13B-GGUF",
-                "files": [
-                    # "llama-2-instruct-13b.Q2_K.gguf",
-                    # "llama-2-instruct-13b.Q3_K_L.gguf",
-                    # "llama-2-instruct-13b.Q3_K_M.gguf",
-                    # "llama-2-instruct-13b.Q3_K_S.gguf",
-                    # "llama-2-instruct-13b.Q4_0.gguf",
-                    # "llama-2-instruct-13b.Q4_K_M.gguf",
-                    # "llama-2-instruct-13b.Q4_K_S.gguf",
-                    # "llama-2-instruct-13b.Q5_0.gguf",
-                    # "llama-2-instruct-13b.Q5_K_M.gguf",
-                    # "llama-2-instruct-13b.Q5_K_S.gguf",
-                    # "llama-2-instruct-13b.Q6_K.gguf",
-                    # "llama-2-instruct-13b.Q8_0.gguf"
-                ]
-            }
-        }
     },
     "LLAMA3": {
-        "Chat": {
-            "8B": {
-                "repo_id": "QuantFactory/Meta-Llama-3-Chat-8B-GGUF",
-                "files": [
-                    # "llama-3-chat-8b.Q2_K.gguf",
-                    # "llama-3-chat-8b.Q3_K_L.gguf",
-                    # "llama-3-chat-8b.Q3_K_M.gguf",
-                    # "llama-3-chat-8b.Q3_K_S.gguf",
-                    # "llama-3-chat-8b.Q4_0.gguf",
-                    # "llama-3-chat-8b.Q4_1.gguf",
-                    # "llama-3-chat-8b.Q4_K_M.gguf",
-                    # "llama-3-chat-8b.Q4_K_S.gguf",
-                    # "llama-3-chat-8b.Q5_0.gguf",
-                    # "llama-3-chat-8b.Q5_1.gguf",
-                    # "llama-3-chat-8b.Q5_K_M.gguf",
-                    # "llama-3-chat-8b.Q5_K_S.gguf",
-                    # "llama-3-chat-8b.Q6_K.gguf",
-                    # "llama-3-chat-8b.Q8_0.gguf"
-                ]
-            },
-            "13B": {
-                "repo_id": "QuantFactory/Meta-Llama-3-Chat-13B-GGUF",
-                "files": [
-                    # "llama-3-chat-13b.Q2_K.gguf",
-                    # "llama-3-chat-13b.Q3_K_L.gguf",
-                    # "llama-3-chat-13b.Q3_K_M.gguf",
-                    # "llama-3-chat-13b.Q3_K_S.gguf",
-                    # "llama-3-chat-13b.Q4_0.gguf",
-                    # "llama-3-chat-13b.Q4_1.gguf",
-                    # "llama-3-chat-13b.Q4_K_M.gguf",
-                    # "llama-3-chat-13b.Q4_K_S.gguf",
-                    # "llama-3-chat-13b.Q5_0.gguf",
-                    # "llama-3-chat-13b.Q5_1.gguf",
-                    # "llama-3-chat-13b.Q5_K_M.gguf",
-                    # "llama-3-chat-13b.Q5_K_S.gguf",
-                    # "llama-3-chat-13b.Q6_K.gguf",
-                    # "llama-3-chat-13b.Q8_0.gguf"
-                ]
-            }
-        },
         "Instruct": {
             "8B": {
                 "repo_id": "QuantFactory/Meta-Llama-3-8B-Instruct-GGUF",
@@ -159,25 +66,6 @@ MODEL_FILES = {
                     "Meta-Llama-3-8B-Instruct.Q8_0.gguf"
                 ]
             },
-            "13B": {
-                "repo_id": "QuantFactory/Meta-Llama-3-Instruct-13B-GGUF",
-                "files": [
-                    # "llama-3-instruct-13b.Q2_K.gguf",
-                    # "llama-3-instruct-13b.Q3_K_L.gguf",
-                    # "llama-3-instruct-13b.Q3_K_M.gguf",
-                    # "llama-3-instruct-13b.Q3_K_S.gguf",
-                    # "llama-3-instruct-13b.Q4_0.gguf",
-                    # "llama-3-instruct-13b.Q4_1.gguf",
-                    # "llama-3-instruct-13b.Q4_K_M.gguf",
-                    # "llama-3-instruct-13b.Q4_K_S.gguf",
-                    # "llama-3-instruct-13b.Q5_0.gguf",
-                    # "llama-3-instruct-13b.Q5_1.gguf",
-                    # "llama-3-instruct-13b.Q5_K_M.gguf",
-                    # "llama-3-instruct-13b.Q5_K_S.gguf",
-                    # "llama-3-instruct-13b.Q6_K.gguf",
-                    # "llama-3-instruct-13b.Q8_0.gguf"
-                ]
-            }
         }
     }
 }
@@ -241,7 +129,7 @@ for model_type in model_types:
                     else:
                         print(f"The file {file} does not exist in {MODEL_DIR}. Downloading...")
                         download_file(repo_id, file)
-            
+
                 # Run llama-cli for each downloaded model
                 for file in files:
                     file_path = os.path.join("models", file)
@@ -255,7 +143,7 @@ for model_type in model_types:
                     print(f"\nRunning llama-bench with model: {file}")
                     bench_command = f"./llama-bench -m {file_path}"
                     with open(BENCHMARK_FILE, "a") as f:
-                        subprocess.run(bench_command, shell=True, cwd=LLAMACPP_DIR, stdout=f, stderr=subprocess.DEVNULL)
+                        subprocess.run(bench_command, shell=True, cwd=LLAMACPP_DIR, stdout=f, stderr=f)
 
 print("\nAll requested model files have been processed and llama-cli run for each.")
 print(f"Benchmark results saved to: {BENCHMARK_FILE}")
