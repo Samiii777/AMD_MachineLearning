@@ -114,36 +114,38 @@ else:
 
 # Process each selected model type, variant, and size
 for model_type in model_types:
-    for variant in model_variants:
-        for size in model_sizes:
-            if size in MODEL_FILES[model_type][variant]:
-                print(f"\nProcessing {model_type} {variant} {size} model files:")
-                repo_id = MODEL_FILES[model_type][variant][size]["repo_id"]
-                files = MODEL_FILES[model_type][variant][size]["files"]
+    if model_type in MODEL_FILES:
+        for variant in model_variants:
+            if variant in MODEL_FILES[model_type]:
+                for size in model_sizes:
+                    if size in MODEL_FILES[model_type][variant]:
+                        print(f"\nProcessing {model_type} {variant} {size} model files:")
+                        repo_id = MODEL_FILES[model_type][variant][size]["repo_id"]
+                        files = MODEL_FILES[model_type][variant][size]["files"]
 
-                # Check each file and download if necessary
-                for file in files:
-                    file_path = os.path.join(MODEL_DIR, file)
-                    if os.path.exists(file_path):
-                        print(f"The file {file} already exists in {MODEL_DIR}")
-                    else:
-                        print(f"The file {file} does not exist in {MODEL_DIR}. Downloading...")
-                        download_file(repo_id, file)
+	                # Check each file and download if necessary
+                        for file in files:
+                            file_path = os.path.join(MODEL_DIR, file)
+                            if os.path.exists(file_path):
+                                print(f"The file {file} already exists in {MODEL_DIR}")
+                            else:
+                                print(f"The file {file} does not exist in {MODEL_DIR}. Downloading...")
+                                download_file(repo_id, file)
 
-                # Run llama-cli for each downloaded model
-                for file in files:
-                    file_path = os.path.join("models", file)
-                    print(f"\nRunning llama-cli with model: {file}")
-                    command = f"./llama-cli -m {file_path} -p '{args.prompt}' -n {args.n} -e -ngl {args.top_k} -t {args.threads}"
-                    subprocess.run(command, shell=True, cwd=LLAMACPP_DIR)
+	                # Run llama-cli for each downloaded model
+                        for file in files:
+                            file_path = os.path.join("models", file)
+                            print(f"\nRunning llama-cli with model: {file}")
+                            command = f"./llama-cli -m {file_path} -p '{args.prompt}' -n {args.n} -e -ngl {args.top_k} -t {args.threads}"
+                            subprocess.run(command, shell=True, cwd=LLAMACPP_DIR)
 
-                # Run llama-bench for each downloaded model
-                for file in files:
-                    file_path = os.path.join("models", file)
-                    print(f"\nRunning llama-bench with model: {file}")
-                    bench_command = f"./llama-bench -m {file_path}"
-                    with open(BENCHMARK_FILE, "a") as f:
-                        subprocess.run(bench_command, shell=True, cwd=LLAMACPP_DIR, stdout=f, stderr=f)
+	                # Run llama-bench for each downloaded model
+                        for file in files:
+                            file_path = os.path.join("models", file)
+                            print(f"\nRunning llama-bench with model: {file}")
+                            bench_command = f"./llama-bench -m {file_path}"
+                            with open(BENCHMARK_FILE, "a") as f:
+                                subprocess.run(bench_command, shell=True, cwd=LLAMACPP_DIR, stdout=f, stderr=f)
 
 print("\nAll requested model files have been processed and llama-cli run for each.")
 print(f"Benchmark results saved to: {BENCHMARK_FILE}")
