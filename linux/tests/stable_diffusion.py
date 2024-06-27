@@ -15,7 +15,7 @@ DEFAULT_MODELS = [
     "stabilityai/stable-diffusion-2-1"
 ]
 DEFAULT_PRECISIONS = ["fp16", "fp32"]
-BATCH_SIZES = [1, 2, 4, 8]
+BATCH_SIZES = [1, 2, 4, 8, 16, 32, 64, 128]
 
 def get_rocm_version():
     try:
@@ -66,21 +66,15 @@ def run_benchmarking(params):
                 f.write("|------------|--------------------|--------------------|----------------------|\n")
 
             for batch_size in BATCH_SIZES:
-                # Generate a random seed for this run
-                seed = random.randint(0, 2**32 - 1)
+                # Generate random seeds for this batch
+                seeds = [random.randint(0, 2**32 - 1) for _ in range(batch_size)]
                 
-                # Set the random seed
-                torch.manual_seed(seed)
-                torch.cuda.manual_seed_all(seed)
-                random.seed(seed)
-                np.random.seed(seed)
-
                 # Perform a dry run (skip timing for the first iteration)
-                _ = pipe([prompt] * batch_size, num_inference_steps=50, guidance_scale=7.5).images
+                _ = pipe([prompt] * batch_size, num_inference_steps=50, guidance_scale=7.5, generator=[torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]).images
 
                 tm = time.time()
                 for i in range(iterations - 2):  # Exclude the first two iterations from timing
-                    images = pipe([prompt] * batch_size, num_inference_steps=50, guidance_scale=7.5).images
+                    images = pipe([prompt] * batch_size, num_inference_steps=50, guidance_scale=7.5, generator=[torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]).images
                 torch.cuda.synchronize()
                 tm2 = time.time()
 
@@ -88,11 +82,12 @@ def run_benchmarking(params):
                 time_per_image = time_per_batch / batch_size
                 throughput = batch_size / time_per_batch
 
-                # Save the last generated image (first image of the last batch)
+                # Save all generated images from the last batch
                 model_name = model_id.split('/')[-1]
-                image_filename = f"{model_name}_{precision_str}_batch{batch_size}_seed{seed}.png"
-                image_path = os.path.join(output_dir, image_filename)
-                images[0].save(image_path)
+                for idx, (image, seed) in enumerate(zip(images, seeds)):
+                    image_filename = f"{model_name}_{precision_str}_batch{batch_size}_seed{seed}_img{idx}.png"
+                    image_path = os.path.join(output_dir, image_filename)
+                    image.save(image_path)
 
                 # Append results to the benchmark file
                 with open(benchmark_file, "a") as f:
@@ -100,7 +95,7 @@ def run_benchmarking(params):
 
                 print(f"Completed benchmark for {model_id}, {precision_str}, batch size {batch_size}")
                 print(f"Time per batch: {time_per_batch:.4f}s, Time per image: {time_per_image:.4f}s, Throughput: {throughput:.4f} img/sec")
-                print(f"Sample image saved as: {image_path}")
+                print(f"Sample images saved in: {output_dir}")
                 print("----------------------------------------------------")
                 print()
 
