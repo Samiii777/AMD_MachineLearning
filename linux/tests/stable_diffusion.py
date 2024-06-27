@@ -15,7 +15,7 @@ DEFAULT_MODELS = [
     "stabilityai/stable-diffusion-2-1"
 ]
 DEFAULT_PRECISIONS = ["fp16", "fp32"]
-BATCH_SIZES = [1, 2, 4, 8, 16, 32, 64, 128]
+BATCH_SIZES = [1]
 
 def get_rocm_version():
     try:
