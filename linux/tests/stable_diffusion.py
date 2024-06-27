@@ -2,8 +2,11 @@ import argparse
 import time
 import torch
 import os
-from diffusers import StableDiffusionPipeline
 import random
+import numpy as np
+import subprocess
+from datetime import datetime
+from diffusers import StableDiffusionPipeline
 
 # Default models and precisions
 DEFAULT_MODELS = [
@@ -12,13 +15,18 @@ DEFAULT_MODELS = [
     "stabilityai/stable-diffusion-2-1"
 ]
 DEFAULT_PRECISIONS = ["fp16", "fp32"]
+BATCH_SIZES = [1, 2, 4, 8]
+
+def get_rocm_version():
+    try:
+        return subprocess.check_output(["cat", "/opt/rocm/.info/version"], universal_newlines=True).strip()
+    except:
+        return "unknown"
 
 def run_benchmarking(params):
     device_ids = params.device_ids
     ngpus = len(device_ids.split(',')) if params.device_ids else torch.cuda.device_count()
     iterations = params.iterations
-    batch_size = 1  # Since we're dealing with a single inference
-    seed = random.randint(0, 2**32 - 1)
 
     if device_ids:
         assert ngpus == len(device_ids.split(','))
@@ -35,45 +43,70 @@ def run_benchmarking(params):
     output_dir = "output_images"
     os.makedirs(output_dir, exist_ok=True)
 
+    # Create benchmark results file
+    rocm_version = get_rocm_version()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    benchmark_file = f"benchmark_results_{rocm_version}_{timestamp}.md"
+
+    with open(benchmark_file, "w") as f:
+        f.write(f"# Stable Diffusion Benchmark Results\n\n")
+        f.write(f"ROCm Version: {rocm_version}\n")
+        f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+
     for model_id in models:
         for precision_str in precisions:
             precision = torch.float32 if precision_str == 'fp32' else torch.float16
             pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=precision)
             pipe = pipe.to("cuda")
 
-            # Set the random seed
-            torch.manual_seed(seed)
-            torch.cuda.manual_seed_all(seed)
+            with open(benchmark_file, "a") as f:
+                f.write(f"# Model: {model_id}\n\n")
+                f.write(f"## Precision: {precision_str}\n\n")
+                f.write("| Batch Size | Time per Batch (s) | Time per Image (s) | Throughput (img/sec) |\n")
+                f.write("|------------|--------------------|--------------------|----------------------|\n")
 
-            # Perform a dry run (skip timing for the first iteration)
-            _ = pipe(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
+            for batch_size in BATCH_SIZES:
+                # Generate a random seed for this run
+                seed = random.randint(0, 2**32 - 1)
+                
+                # Set the random seed
+                torch.manual_seed(seed)
+                torch.cuda.manual_seed_all(seed)
+                random.seed(seed)
+                np.random.seed(seed)
 
-            tm = time.time()
-            for i in range(iterations - 2):  # Exclude the first two iterations from timing
-                image = pipe(prompt, num_inference_steps=50, guidance_scale=7.5).images[0]
-            torch.cuda.synchronize()
-            tm2 = time.time()
+                # Perform a dry run (skip timing for the first iteration)
+                _ = pipe([prompt] * batch_size, num_inference_steps=50, guidance_scale=7.5).images
 
-            time_per_inference = (tm2 - tm) / (iterations - 2)  # Exclude the first two iterations from timing
+                tm = time.time()
+                for i in range(iterations - 2):  # Exclude the first two iterations from timing
+                    images = pipe([prompt] * batch_size, num_inference_steps=50, guidance_scale=7.5).images
+                torch.cuda.synchronize()
+                tm2 = time.time()
 
-            # Save the last generated image
-            model_name = model_id.split('/')[-1]
-            image_filename = f"{model_name}_{precision_str}_seed{seed}.png"
-            image_path = os.path.join(output_dir, image_filename)
-            image.save(image_path)
+                time_per_batch = (tm2 - tm) / (iterations - 2)  # Exclude the first two iterations from timing
+                time_per_image = time_per_batch / batch_size
+                throughput = batch_size / time_per_batch
 
-            print("OK: finished running benchmark..")
-            print("--------------------SUMMARY--------------------------")
-            print("Benchmark for Stable Diffusion Pipeline")
-            print("Model: {}".format(model_id))
-            print("Precision: {}".format(precision_str))
-            print("Num devices: {}".format(ngpus))
-            print("Mini batch size [img] : {}".format(batch_size))
-            print("Time per inference : {:.4f}".format(time_per_inference))
-            print("Throughput [img/sec] : {:.4f}".format(batch_size / time_per_inference))
-            print("Image saved as: {}".format(image_path))
-            print("----------------------------------------------------")
-            print()
+                # Save the last generated image (first image of the last batch)
+                model_name = model_id.split('/')[-1]
+                image_filename = f"{model_name}_{precision_str}_batch{batch_size}_seed{seed}.png"
+                image_path = os.path.join(output_dir, image_filename)
+                images[0].save(image_path)
+
+                # Append results to the benchmark file
+                with open(benchmark_file, "a") as f:
+                    f.write(f"| {batch_size:10d} | {time_per_batch:18.4f} | {time_per_image:18.4f} | {throughput:20.4f} |\n")
+
+                print(f"Completed benchmark for {model_id}, {precision_str}, batch size {batch_size}")
+                print(f"Time per batch: {time_per_batch:.4f}s, Time per image: {time_per_image:.4f}s, Throughput: {throughput:.4f} img/sec")
+                print(f"Sample image saved as: {image_path}")
+                print("----------------------------------------------------")
+                print()
+
+            # Add a newline after each precision's table
+            with open(benchmark_file, "a") as f:
+                f.write("\n")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -81,7 +114,6 @@ def main():
     parser.add_argument("--precisions", type=str, required=False, help="Comma-separated list of precisions (fp16 or fp32)")
     parser.add_argument("--iterations", type=int, required=False, default=5, help="Iterations")
     parser.add_argument("--device_ids", type=str, required=False, default=None, help="Comma-separated list (no spaces) to specify which HIP devices (0-indexed) to run dataparallel or distributedDataParallel api on.")
-    parser.add_argument("--seed", type=int, required=False, default=42, help="Random seed for image generation")
     args = parser.parse_args()
 
     run_benchmarking(args)
