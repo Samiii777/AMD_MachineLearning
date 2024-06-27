@@ -20,7 +20,7 @@ MODEL_DIR = "llama.cpp/models"
 LLAMACPP_DIR = "llama.cpp"
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
 rocmVersion = subprocess.check_output(["cat", "/opt/rocm/.info/version"], universal_newlines=True).strip()
-BENCHMARK_FILE = f"benchmark_results_{rocmVersion}_{timestamp}.md"
+BENCHMARK_FILE = f"llamaCpp_benchmark_results_{rocmVersion}_{timestamp}.md"
 
 # Dictionary of model files and their corresponding repo IDs
 MODEL_FILES = {
@@ -67,6 +67,16 @@ MODEL_FILES = {
                 ]
             },
         }
+    },
+    "Gemma": {
+        "": {
+            "7B": {
+                "repo_id": "google/gemma-7b-GGUF",
+                "files": [
+                    "gemma-7b.gguf"
+                ]
+            },
+        }
     }
 }
 
@@ -86,8 +96,8 @@ def download_file(repo_id, file_name):
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Download GGUF model files and run llama-cli")
-parser.add_argument("--model-type", choices=list(MODEL_FILES.keys()), help="Type of model to download (LLAMA2 or LLAMA3)")
-parser.add_argument("--model-variant", choices=["Chat", "Instruct"], help="Variant of model to download (optional)")
+parser.add_argument("--model-type", choices=list(MODEL_FILES.keys()), help="Type of model to download (LLAMA2, LLAMA3, Gemma)")
+parser.add_argument("--model-variant", choices=["Chat", "Instruct", ""], help="Variant of model to download (optional)")
 parser.add_argument("--model-size", help="Size of the model to download (optional)")
 parser.add_argument("--prompt", default="Hi you how are you", help="Prompt for llama-cli")
 parser.add_argument("--n", type=int, default=50, help="Number of tokens to generate")
@@ -105,7 +115,7 @@ else:
 if args.model_variant:
     model_variants = [args.model_variant]
 else:
-    model_variants = ["Chat", "Instruct"]
+    model_variants = ["Chat", "Instruct", ""]
 
 if args.model_size:
     model_sizes = [args.model_size]
