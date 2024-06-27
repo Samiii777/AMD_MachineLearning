@@ -47,7 +47,7 @@ def run_benchmarking(params):
 
     # Create benchmark results file
     rocm_version = get_rocm_version()
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
     benchmark_file = f"SD_benchmark_results_{rocm_version}_{timestamp}.md"
 
     with open(benchmark_file, "w") as f:
