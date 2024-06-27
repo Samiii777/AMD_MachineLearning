@@ -6,10 +6,11 @@ import random
 import numpy as np
 import subprocess
 from datetime import datetime
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, StableDiffusion3Pipeline
 
 # Default models and precisions
 DEFAULT_MODELS = [
+    "stabilityai/stable-diffusion-3-medium-diffusers",
     "runwayml/stable-diffusion-v1-5",
     "CompVis/stable-diffusion-v1-4",
     "stabilityai/stable-diffusion-2-1"
@@ -38,6 +39,7 @@ def run_benchmarking(params):
     precisions = params.precisions.split(',') if params.precisions else DEFAULT_PRECISIONS
 
     prompt = "A photograph of an astronaut riding a horse on Mars, high resolution, high definition."
+    negative_prompt = ""
 
     # Create output directory if it doesn't exist
     output_dir = "output_images"
@@ -45,18 +47,24 @@ def run_benchmarking(params):
 
     # Create benchmark results file
     rocm_version = get_rocm_version()
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
     benchmark_file = f"benchmark_results_{rocm_version}_{timestamp}.md"
 
     with open(benchmark_file, "w") as f:
         f.write(f"# Stable Diffusion Benchmark Results\n\n")
         f.write(f"ROCm Version: {rocm_version}\n")
-        f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:')}\n\n")
 
     for model_id in models:
         for precision_str in precisions:
             precision = torch.float32 if precision_str == 'fp32' else torch.float16
-            pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=precision)
+            
+            # Load the appropriate model
+            if "stabilityai/stable-diffusion-3-medium-diffusers" in model_id:
+                pipe = StableDiffusion3Pipeline.from_pretrained(model_id, torch_dtype=precision)
+            else:
+                pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=precision)
+            
             pipe = pipe.to("cuda")
 
             with open(benchmark_file, "a") as f:
@@ -70,11 +78,27 @@ def run_benchmarking(params):
                 seeds = [random.randint(0, 2**32 - 1) for _ in range(batch_size)]
                 
                 # Perform a dry run (skip timing for the first iteration)
-                _ = pipe([prompt] * batch_size, num_inference_steps=50, guidance_scale=7.5, generator=[torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]).images
+                _ = pipe(
+                    prompt=[prompt] * batch_size,
+                    negative_prompt=[negative_prompt] * batch_size,
+                    num_inference_steps=28,
+                    height=1024,
+                    width=1024,
+                    guidance_scale=7.0,
+                    generator=[torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]
+                ).images
 
                 tm = time.time()
                 for i in range(iterations - 2):  # Exclude the first two iterations from timing
-                    images = pipe([prompt] * batch_size, num_inference_steps=50, guidance_scale=7.5, generator=[torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]).images
+                    images = pipe(
+                        prompt=[prompt] * batch_size,
+                        negative_prompt=[negative_prompt] * batch_size,
+                        num_inference_steps=28,
+                        height=1024,
+                        width=1024,
+                        guidance_scale=7.0,
+                        generator=[torch.Generator(device="cuda").manual_seed(seed) for seed in seeds]
+                    ).images
                 torch.cuda.synchronize()
                 tm2 = time.time()
 
