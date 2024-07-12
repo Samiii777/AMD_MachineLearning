@@ -4,7 +4,7 @@ from huggingface_hub import hf_hub_download
 import subprocess
 from datetime import datetime
 import git
-
+import csv
 
 # If llama.cpp folder exists
 if os.path.exists("llama.cpp"):
@@ -21,6 +21,7 @@ LLAMACPP_DIR = "llama.cpp"
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
 rocmVersion = subprocess.check_output(["cat", "/opt/rocm/.info/version"], universal_newlines=True).strip()
 BENCHMARK_FILE = f"llamaCpp_benchmark_results_{rocmVersion}_{timestamp}.md"
+CSV_BENCHMARK_FILE = f"llamaCpp_benchmark_results_{rocmVersion}_{timestamp}.csv"
 
 # Dictionary of model files and their corresponding repo IDs
 MODEL_FILES = {
@@ -30,17 +31,17 @@ MODEL_FILES = {
                 "repo_id": "TheBloke/Llama-2-7B-Chat-GGUF",
                 "files": [
                     "llama-2-7b-chat.Q2_K.gguf",
-                     "llama-2-7b-chat.Q3_K_L.gguf",
-                     "llama-2-7b-chat.Q3_K_M.gguf",
-                     "llama-2-7b-chat.Q3_K_S.gguf",
-                     "llama-2-7b-chat.Q4_0.gguf",
-                     "llama-2-7b-chat.Q4_K_M.gguf",
-                     "llama-2-7b-chat.Q4_K_S.gguf",
-                     "llama-2-7b-chat.Q5_0.gguf",
-                     "llama-2-7b-chat.Q5_K_M.gguf",
-                     "llama-2-7b-chat.Q5_K_S.gguf",
-                     "llama-2-7b-chat.Q6_K.gguf",
-                     "llama-2-7b-chat.Q8_0.gguf"
+                    "llama-2-7b-chat.Q3_K_L.gguf",
+                    "llama-2-7b-chat.Q3_K_M.gguf",
+                    "llama-2-7b-chat.Q3_K_S.gguf",
+                    "llama-2-7b-chat.Q4_0.gguf",
+                    "llama-2-7b-chat.Q4_K_M.gguf",
+                    "llama-2-7b-chat.Q4_K_S.gguf",
+                    "llama-2-7b-chat.Q5_0.gguf",
+                    "llama-2-7b-chat.Q5_K_M.gguf",
+                    "llama-2-7b-chat.Q5_K_S.gguf",
+                    "llama-2-7b-chat.Q6_K.gguf",
+                    "llama-2-7b-chat.Q8_0.gguf"
                 ]
             },
         },
@@ -93,6 +94,25 @@ def download_file(repo_id, file_name):
     except Exception as e:
         print(f"Failed to download {file_name}: {str(e)}")
 
+# Function to parse benchmark output and save to CSV
+def parse_and_save_benchmark(output, csv_file):
+    lines = output.split('\n')
+    start_index = next((i for i, line in enumerate(lines) if line.startswith('| model')), -1)
+    if start_index == -1:
+        print("Benchmark table not found in output")
+        return
+    
+    header = [col.strip() for col in lines[start_index].split('|')[1:-1]]
+    
+    with open(csv_file, 'a', newline='') as f:
+        writer = csv.writer(f)
+        if f.tell() == 0:  # Write header only if file is empty
+            writer.writerow(header)
+        
+        for line in lines[start_index+2:]:  # Skip the header and separator lines
+            if line.startswith('|'):
+                row = [col.strip() for col in line.split('|')[1:-1]]
+                writer.writerow(row)
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Download GGUF model files and run llama-cli")
@@ -133,7 +153,7 @@ for model_type in model_types:
                         repo_id = MODEL_FILES[model_type][variant][size]["repo_id"]
                         files = MODEL_FILES[model_type][variant][size]["files"]
 
-	                # Check each file and download if necessary
+                        # Check each file and download if necessary
                         for file in files:
                             file_path = os.path.join(MODEL_DIR, file)
                             if os.path.exists(file_path):
@@ -142,20 +162,31 @@ for model_type in model_types:
                                 print(f"The file {file} does not exist in {MODEL_DIR}. Downloading...")
                                 download_file(repo_id, file)
 
-	                # Run llama-cli for each downloaded model
+                        # Run llama-cli for each downloaded model
                         for file in files:
                             file_path = os.path.join("models", file)
                             print(f"\nRunning llama-cli with model: {file}")
                             command = f"./llama-cli -m {file_path} -p '{args.prompt}' -n {args.n} -e -ngl {args.top_k} -t {args.threads}"
                             subprocess.run(command, shell=True, cwd=LLAMACPP_DIR)
 
-	                # Run llama-bench for each downloaded model
+                        # Run llama-bench for each downloaded model
                         for file in files:
                             file_path = os.path.join("models", file)
                             print(f"\nRunning llama-bench with model: {file}")
                             bench_command = f"./llama-bench -m {file_path}"
+                            
+                            # Run the benchmark and capture the output
+                            result = subprocess.run(bench_command, shell=True, cwd=LLAMACPP_DIR, capture_output=True, text=True)
+                            
+                            # Write the full output to the markdown file
                             with open(BENCHMARK_FILE, "a") as f:
-                                subprocess.run(bench_command, shell=True, cwd=LLAMACPP_DIR, stdout=f, stderr=f)
+                                f.write(f"\n## Benchmark results for {file}\n\n")
+                                f.write(result.stdout)
+                                f.write(result.stderr)
+                            
+                            # Parse the output and save to CSV
+                            parse_and_save_benchmark(result.stdout, CSV_BENCHMARK_FILE)
 
 print("\nAll requested model files have been processed and llama-cli run for each.")
 print(f"Benchmark results saved to: {BENCHMARK_FILE}")
+print(f"Benchmark results also saved to CSV: {CSV_BENCHMARK_FILE}")
