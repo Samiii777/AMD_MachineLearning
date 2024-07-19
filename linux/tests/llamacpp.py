@@ -13,7 +13,7 @@ else:
     print("llama.cpp folder not found. Cloning repository.")
     repo = git.Repo.clone_from("https://github.com/ggerganov/llama.cpp.git", "llama.cpp")
     subprocess.run(["make", "clean"], cwd="llama.cpp")
-    subprocess.run(["make", "LLAMA_HIPBLAS=1"], cwd="llama.cpp")
+    subprocess.run(["make", "GGML_HIPBLAS=1"], cwd="llama.cpp")
 
 # Define the model directory
 MODEL_DIR = "llama.cpp/models"
@@ -95,7 +95,7 @@ def download_file(repo_id, file_name):
         print(f"Failed to download {file_name}: {str(e)}")
 
 # Function to parse benchmark output and save to CSV
-def parse_and_save_benchmark(output, csv_file):
+def parse_and_save_benchmark(output, csv_file, model_info):
     lines = output.split('\n')
     start_index = next((i for i, line in enumerate(lines) if line.startswith('| model')), -1)
     if start_index == -1:
@@ -107,12 +107,16 @@ def parse_and_save_benchmark(output, csv_file):
     with open(csv_file, 'a', newline='') as f:
         writer = csv.writer(f)
         if f.tell() == 0:  # Write header only if file is empty
-            writer.writerow(header)
+            writer.writerow(['Model'] + header)
         
+        # Write model info and benchmark results
         for line in lines[start_index+2:]:  # Skip the header and separator lines
             if line.startswith('|'):
                 row = [col.strip() for col in line.split('|')[1:-1]]
-                writer.writerow(row)
+                writer.writerow([model_info] + row)
+        
+        # Add an empty row for better readability
+        writer.writerow([])
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Download GGUF model files and run llama-cli")
@@ -172,7 +176,7 @@ for model_type in model_types:
                         # Run llama-bench for each downloaded model
                         for file in files:
                             file_path = os.path.join("models", file)
-                            print(f"\nRunning llama-bench with model: {file}")
+                            print(f"\nRunning llama-bench for {model_type} {variant} {size} model: {file}")
                             bench_command = f"./llama-bench -m {file_path}"
                             
                             # Run the benchmark and capture the output
@@ -180,12 +184,16 @@ for model_type in model_types:
                             
                             # Write the full output to the markdown file
                             with open(BENCHMARK_FILE, "a") as f:
-                                f.write(f"\n## Benchmark results for {file}\n\n")
+                                f.write(f"\n## Benchmark results for {model_type} {variant} {size} model: {file}\n\n")
                                 f.write(result.stdout)
                                 f.write(result.stderr)
                             
                             # Parse the output and save to CSV
-                            parse_and_save_benchmark(result.stdout, CSV_BENCHMARK_FILE)
+                            model_info = f"{model_type} {variant} {size} - {file}"
+                            parse_and_save_benchmark(result.stdout, CSV_BENCHMARK_FILE, model_info)
+
+                            # Print a separator for better readability
+                            print("-" * 50)
 
 print("\nAll requested model files have been processed and llama-cli run for each.")
 print(f"Benchmark results saved to: {BENCHMARK_FILE}")
