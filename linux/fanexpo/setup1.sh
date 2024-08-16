@@ -15,5 +15,6 @@ wget https://repo.anaconda.com/miniconda/Miniconda3-py310_24.5.0-0-Linux-x86_64.
 
 # Install Miniconda
 bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+~/miniconda3/bin/conda init bash
 
 echo "Miniconda installation complete. Please restart your terminal or run 'source ~/.bashrc' to use Miniconda."
