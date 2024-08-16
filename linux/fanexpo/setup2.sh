@@ -1,6 +1,7 @@
 #!/bin/bash
-
+source ~/miniconda3/etc/profile.d/conda.sh
 cd ~/src
+conda activate base
 
 # Clone the repository
 git clone https://github.com/Samiii777/AMD_MachineLearning.git
@@ -11,7 +12,6 @@ cd AMD_MachineLearning/linux/
 # Run the install script
 sh ./install.sh
 
-
 cd ~/src
 
 # Clone the repository
@@ -19,9 +19,6 @@ git clone https://github.com/farshadghodsian/llava-amd-radeon-demo
 
 # Change directory to the cloned repository
 cd llava-amd-radeon-demo
-
-# Ensure conda is available in the script
-source ~/miniconda3/etc/profile.d/conda.sh
 
 # Create a conda environment named llava by cloning base
 conda create --name llava --clone base
