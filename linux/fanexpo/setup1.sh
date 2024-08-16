@@ -1,9 +1,9 @@
 #!/bin/bash
 
-sudo apt update
+sudo apt update -y
 sudo apt dist-upgrade -y
-sudo apt install git
-sudo apt install openssh-server
+sudo apt install git -y
+sudo apt install openssh-server -y
 
 mkdir -p ~/src
 
