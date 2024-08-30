@@ -8,7 +8,7 @@ current_dir=$(dirname "$0")
 sudo apt install -y python3-pip 
 #Install Jupyter-lab
 sudo snap install jupyter
-sudoapt install -y jupyter-core
+sudo apt install -y jupyter-core
 
 pip3 install jupyterlab
 
