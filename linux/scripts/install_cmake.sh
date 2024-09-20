@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Default CMake version
-DEFAULT_CMAKE_VERSION="3.29.6"
+DEFAULT_CMAKE_VERSION="3.30.3"
 
 # Use user-provided CMake version if provided, otherwise use default
 CMAKE_VERSION=${1:-$DEFAULT_CMAKE_VERSION}
