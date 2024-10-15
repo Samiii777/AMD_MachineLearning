@@ -13,7 +13,7 @@ sh ./install.sh [ROCM_VERSION]
 ```
 ###### Arguments
 
-- `[ROCM_VERSION]`: Specify the ROCm version to install. If not provided, the default version `6.1.3` will be used.
+- `[ROCM_VERSION]`: Specify the ROCm version to install. If not provided, the default version `6.2.3` will be used.
 
 
 ### Manual Installation
