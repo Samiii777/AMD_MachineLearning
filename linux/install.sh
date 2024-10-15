@@ -5,7 +5,7 @@
 
 amdgpu-uninstall -y
 
-rocm_version="6.1.3"
+rocm_version="6.2.3"
 
 # Check if a version argument is provided
 if [ $# -eq 1 ]; then
