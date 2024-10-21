@@ -1,5 +1,5 @@
 #!/bin/sh
-# TODO - Fix why showing extra GPU in mGPU setup
+#test
 # Function to convert memory size to GB
 convert_to_gb() {
     awk '{printf "%.2f\n", $1/1024/1024/1024}'
@@ -10,7 +10,7 @@ gpu_number=0
 total_vram_used=0
 
 # Get GPU addresses
-gpu_addresses=$(lspci | grep VGA | awk '{print $1}')
+gpu_addresses=$(lspci | grep -E 'VGA|3D|Display' | grep -iE 'amd' | awk '{print $1}')
 
 # Iterate over each GPU address
 for gpu_address in $gpu_addresses; do
