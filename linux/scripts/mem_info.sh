@@ -1,5 +1,5 @@
 #!/bin/sh
-#test
+
 # Function to convert memory size to GB
 convert_to_gb() {
     awk '{printf "%.2f\n", $1/1024/1024/1024}'
