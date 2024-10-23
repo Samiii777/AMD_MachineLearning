@@ -5,4 +5,4 @@ accelerate
 onnx
 pandas
 opencv-python
-
+onnxconverter_common
