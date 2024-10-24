@@ -6,3 +6,4 @@ onnx
 pandas
 opencv-python
 onnxconverter_common
+sentencepiece
