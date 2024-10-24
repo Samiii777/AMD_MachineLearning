@@ -9,3 +9,6 @@ onnxconverter_common
 sentencepiece
 diffusers
 accelerate
+datasets
+evaluate
+
