@@ -30,17 +30,9 @@ MODEL_FILES = {
             "7B": {
                 "repo_id": "TheBloke/Llama-2-7B-Chat-GGUF",
                 "files": [
-                    "llama-2-7b-chat.Q2_K.gguf",
-                    "llama-2-7b-chat.Q3_K_L.gguf",
-                    "llama-2-7b-chat.Q3_K_M.gguf",
-                    "llama-2-7b-chat.Q3_K_S.gguf",
                     "llama-2-7b-chat.Q4_0.gguf",
                     "llama-2-7b-chat.Q4_K_M.gguf",
                     "llama-2-7b-chat.Q4_K_S.gguf",
-                    "llama-2-7b-chat.Q5_0.gguf",
-                    "llama-2-7b-chat.Q5_K_M.gguf",
-                    "llama-2-7b-chat.Q5_K_S.gguf",
-                    "llama-2-7b-chat.Q6_K.gguf",
                     "llama-2-7b-chat.Q8_0.gguf"
                 ]
             },
@@ -51,30 +43,29 @@ MODEL_FILES = {
             "8B": {
                 "repo_id": "QuantFactory/Meta-Llama-3-8B-Instruct-GGUF",
                 "files": [
-                    "Meta-Llama-3-8B-Instruct.Q2_K.gguf",
-                    "Meta-Llama-3-8B-Instruct.Q3_K_L.gguf",
-                    "Meta-Llama-3-8B-Instruct.Q3_K_M.gguf",
-                    "Meta-Llama-3-8B-Instruct.Q3_K_S.gguf",
                     "Meta-Llama-3-8B-Instruct.Q4_0.gguf",
-                    "Meta-Llama-3-8B-Instruct.Q4_1.gguf",
                     "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf",
                     "Meta-Llama-3-8B-Instruct.Q4_K_S.gguf",
-                    "Meta-Llama-3-8B-Instruct.Q5_0.gguf",
-                    "Meta-Llama-3-8B-Instruct.Q5_1.gguf",
-                    "Meta-Llama-3-8B-Instruct.Q5_K_M.gguf",
-                    "Meta-Llama-3-8B-Instruct.Q5_K_S.gguf",
-                    "Meta-Llama-3-8B-Instruct.Q6_K.gguf",
                     "Meta-Llama-3-8B-Instruct.Q8_0.gguf"
                 ]
             },
         }
     },
-    "Gemma": {
+    "LLAMA3.1": {
         "": {
             "7B": {
-                "repo_id": "google/gemma-7b-GGUF",
+                "repo_id": "SanctumAI/Meta-Llama-3.1-8B-Instruct-GGUF",
                 "files": [
-                    "gemma-7b.gguf"
+                    "meta-llama-3.1-8b-instruct.Q4_0.gguf",
+                    "meta-llama-3.1-8b-instruct.Q4_K_M.gguf",
+                    "meta-llama-3.1-8b-instruct.Q4_K_S.gguf",
+                    "meta-llama-3.1-8b-instruct.Q8_0.gguf"
+                ]
+            },
+            "70B": {
+                 "repo_id": "bartowski/Meta-Llama-3.1-70B-Instruct-GGUF",
+                 "files": [
+                     "Meta-Llama-3.1-70B-Instruct-Q4_K_M.gguf"
                 ]
             },
         }
@@ -144,7 +135,7 @@ else:
 if args.model_size:
     model_sizes = [args.model_size]
 else:
-    model_sizes = ["7B", "8B", "13B"]
+    model_sizes = ["7B", "8B", "13B", "70B"]
 
 # Process each selected model type, variant, and size
 for model_type in model_types:
