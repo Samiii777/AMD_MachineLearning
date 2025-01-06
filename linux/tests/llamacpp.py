@@ -103,20 +103,20 @@ def parse_and_save_benchmark(output, csv_file, model_info):
     if start_index == -1:
         print("Benchmark table not found in output")
         return
-    
+
     header = [col.strip() for col in lines[start_index].split('|')[1:-1]]
-    
+
     with open(csv_file, 'a', newline='') as f:
         writer = csv.writer(f)
         if f.tell() == 0:  # Write header only if file is empty
             writer.writerow(['Model'] + header)
-        
+
         # Write model info and benchmark results
         for line in lines[start_index+2:]:  # Skip the header and separator lines
             if line.startswith('|'):
                 row = [col.strip() for col in line.split('|')[1:-1]]
                 writer.writerow([model_info] + row)
-        
+
         # Add an empty row for better readability
         writer.writerow([])
 
@@ -180,16 +180,16 @@ for model_type in model_types:
                             file_path = os.path.join("models", file)
                             print(f"\nRunning llama-bench for {model_type} {variant} {size} model: {file}")
                             bench_command = f"./llama-bench -m {file_path}"
-                            
+
                             # Run the benchmark and capture the output
                             result = subprocess.run(bench_command, shell=True, cwd=LLAMACPP_DIR, capture_output=True, text=True)
-                            
+
                             # Write the full output to the markdown file
                             with open(BENCHMARK_FILE, "a") as f:
                                 f.write(f"\n## Benchmark results for {model_type} {variant} {size} model: {file}\n\n")
                                 f.write(result.stdout)
                                 f.write(result.stderr)
-                            
+
                             # Parse the output and save to CSV
                             model_info = f"{model_type} {variant} {size} - {file}"
                             parse_and_save_benchmark(result.stdout, CSV_BENCHMARK_FILE, model_info)
