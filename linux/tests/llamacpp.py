@@ -3,8 +3,19 @@ import argparse
 from huggingface_hub import hf_hub_download
 import subprocess
 from datetime import datetime
-import git
 import csv
+
+try:
+    import git
+except ModuleNotFoundError:
+    print("The 'git' module is not installed. Attempting to install it now...")
+    try:
+        subprocess.check_call(["pip", "install", "gitpython"])
+        import git  # Re-import after installation
+        print("Successfully installed the 'git' module.")
+    except Exception as e:
+        print(f"Failed to install the 'git' module. Error: {e}")
+        exit(1)
 
 # If llama.cpp folder exists
 if os.path.exists("llama.cpp"):
