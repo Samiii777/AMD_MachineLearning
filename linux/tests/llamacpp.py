@@ -138,6 +138,16 @@ MODEL_FILES = {
                 ]
             },
         }
+    },
+    "LLAMA3.3": {
+        "": {
+            "70B": {
+                "repo_id": "unsloth/Llama-3.3-70B-Instruct-GGUF",
+                "files": [
+                    "Llama-3.3-70B-Instruct-Q4_K_M.gguf"
+                ]
+            }
+        }
     }
 }
 
