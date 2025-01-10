@@ -190,7 +190,7 @@ def parse_and_save_benchmark(output, csv_file, model_info):
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Download GGUF model files and run llama-cli")
-parser.add_argument("--model-type", default = "LLAMA3.2" , choices=list(MODEL_FILES.keys()), help="Type of model to download (LLAMA2, LLAMA3, LLAMA3.1, LLAMA3.2)")
+parser.add_argument("--model-type", default = "LLAMA3.3" , choices=list(MODEL_FILES.keys()), help="Type of model to download (LLAMA2, LLAMA3, LLAMA3.1, LLAMA3.2, LLAMA3.3)")
 parser.add_argument("--model-variant", choices=["Chat", "Instruct", ""], help="Variant of model to download (optional)")
 parser.add_argument("--model-size", help="Size of the model to download (optional)")
 parser.add_argument("--prompt", default="Hi you how are you", help="Prompt for llama-cli")
