@@ -6,8 +6,8 @@ def load_and_process_csv(file_path):
     df = pd.read_csv(file_path)
     # Split the 'Model' column into model info and file name
     df[['Model_Info', 'File']] = df['Model'].str.split(' - ', expand=True)
-    # Split the model info into type, variant, and size
-    df[['Model_Type', 'Variant', 'Size']] = df['Model_Info'].str.split(' ', expand=True, n=2)
+    # Split the model info into type, and size
+    df[['Model_Type', 'Size']] = df['Model_Info'].str.split(' ', expand=True, n=2)
     # Convert t/s to numeric, removing the '±' part
     df['t/s'] = df['t/s'].str.split('±').str[0].astype(float)
     return df
@@ -17,7 +17,7 @@ def compare_performance(file1, file2):
     df2 = load_and_process_csv(file2)
 
     # Merge the two dataframes, preserving the original order
-    merged_df = pd.merge(df1, df2, on=['File', 'test', 'Model_Type', 'Variant', 'Size'], how='left', suffixes=('_1', '_2'))
+    merged_df = pd.merge(df1, df2, on=['File', 'test', 'Model_Type', 'Size'], how='left', suffixes=('_1', '_2'))
 
     # Calculate performance difference
     merged_df['performance_diff'] = merged_df['t/s_2'] - merged_df['t/s_1']
@@ -34,10 +34,10 @@ def compare_performance(file1, file2):
             if current_model is not None:
                 results.append([])  # Add an empty row
             current_model = row['File']
-        results.append([row['File'], row['Model_Type'], row['Variant'], row['Size'], row['test'], f"{row['t/s_1']:.2f}", f"{row['t/s_2']:.2f}", f"{row['performance_diff']:.2f}", f"{row['performance_diff_percent']:.2f}"])
+        results.append([row['File'], row['Model_Type'], row['Size'], row['test'], f"{row['t/s_1']:.2f}", f"{row['t/s_2']:.2f}", f"{row['performance_diff']:.2f}", f"{row['performance_diff_percent']:.2f}"])
 
     # Rename the columns
-    columns = ['File', 'Model_Type', 'Variant', 'Size', 'test', f't/s ({file1})', f't/s ({file2})', 'Diff (t/s)', 'Diff (%)']
+    columns = ['File', 'Model_Type', 'Size', 'test', f't/s ({file1})', f't/s ({file2})', 'Diff (t/s)', 'Diff (%)']
     results = pd.DataFrame(results, columns=columns)
 
     return results
