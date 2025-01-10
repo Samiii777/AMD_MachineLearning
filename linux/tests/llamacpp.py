@@ -30,7 +30,14 @@ def check_and_install_cmake():
 
 def build_llamacpp():
     os.chdir("llama.cpp")
-    subprocess.run(["cmake", "--build", "build", "--target", "clean"], check=True)    
+    
+    # Create build directory if it doesn't exist
+    os.makedirs("build", exist_ok=True)
+    
+    # Skip clean if build directory is empty
+    if os.listdir("build"):
+        subprocess.run(["cmake", "--build", "build", "--target", "clean"], check=True)
+    
     hip_path = subprocess.check_output(["hipconfig", "-R"]).decode().strip()
     hip_clang = f"{subprocess.check_output(['hipconfig', '-l']).decode().strip()}/clang"
     
@@ -54,10 +61,14 @@ def build_llamacpp():
 def clone_llamacpp():
     if os.path.exists("llama.cpp"):
         print("llama.cpp folder found.")
+        if not os.path.exists("llama.cpp/build"):
+            print("Build folder not found. Building llama.cpp.")
+            build_llamacpp()
     else:
         print("llama.cpp folder not found. Cloning repository.")
         git.Repo.clone_from("https://github.com/ggerganov/llama.cpp.git", "llama.cpp")
         build_llamacpp()
+
 
 
 check_and_install_cmake()
