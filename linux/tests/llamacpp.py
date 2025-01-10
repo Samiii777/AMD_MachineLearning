@@ -5,6 +5,7 @@ import subprocess
 from datetime import datetime
 import csv
 
+
 try:
     import git
 except ModuleNotFoundError:
@@ -17,14 +18,50 @@ except ModuleNotFoundError:
         print(f"Failed to install the 'git' module. Error: {e}")
         exit(1)
 
-# If llama.cpp folder exists
-if os.path.exists("llama.cpp"):
-    print("llama.cpp folder found.")
-else:
-    print("llama.cpp folder not found. Cloning repository.")
-    repo = git.Repo.clone_from("https://github.com/ggerganov/llama.cpp.git", "llama.cpp")
-    subprocess.run(["make", "clean"], cwd="llama.cpp")
-    subprocess.run(["make", "GGML_HIPBLAS=1"], cwd="llama.cpp")
+
+def check_and_install_cmake():
+    try:
+        subprocess.run(["cmake", "--version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("CMake is already installed.")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        print("CMake not found. Installing CMake...")
+        subprocess.run(["sh", "scripts/install_cmake.sh"], check=True)
+        print("CMake installation completed.")
+
+def build_llamacpp():
+    os.chdir("llama.cpp")
+    subprocess.run(["cmake", "--build", "build", "--target", "clean"], check=True)    
+    hip_path = subprocess.check_output(["hipconfig", "-R"]).decode().strip()
+    hip_clang = f"{subprocess.check_output(['hipconfig', '-l']).decode().strip()}/clang"
+    
+    cmake_command = [
+        "cmake",
+        "-S", ".",
+        "-B", "build",
+        "-DGGML_HIP=ON",
+        "-DAMDGPU_TARGETS=gfx1100",
+        "-DCMAKE_BUILD_TYPE=Release"
+    ]
+    
+    env = os.environ.copy()
+    env["HIPCXX"] = hip_clang
+    env["HIP_PATH"] = hip_path
+    
+    subprocess.run(cmake_command, check=True, env=env)
+    subprocess.run(["cmake", "--build", "build", "--config", "Release", "--", "-j", "16"], check=True)
+    os.chdir("..")
+
+def clone_llamacpp():
+    if os.path.exists("llama.cpp"):
+        print("llama.cpp folder found.")
+    else:
+        print("llama.cpp folder not found. Cloning repository.")
+        git.Repo.clone_from("https://github.com/ggerganov/llama.cpp.git", "llama.cpp")
+        build_llamacpp()
+
+
+check_and_install_cmake()
+clone_llamacpp()
 
 # Define the model directory
 MODEL_DIR = "llama.cpp/models"
@@ -64,7 +101,7 @@ MODEL_FILES = {
     },
     "LLAMA3.1": {
         "": {
-            "7B": {
+            "8B": {
                 "repo_id": "SanctumAI/Meta-Llama-3.1-8B-Instruct-GGUF",
                 "files": [
                     "meta-llama-3.1-8b-instruct.Q4_0.gguf",
@@ -77,6 +114,27 @@ MODEL_FILES = {
                  "repo_id": "bartowski/Meta-Llama-3.1-70B-Instruct-GGUF",
                  "files": [
                      "Meta-Llama-3.1-70B-Instruct-Q4_K_M.gguf"
+                ]
+            },
+        }
+    },
+    "LLAMA3.2": {
+        "": {
+            "1B": {
+                "repo_id": "bartowski/Llama-3.2-1B-Instruct-GGUF",
+                "files": [
+                    "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+                    "Llama-3.2-1B-Instruct-Q6_K.gguf",
+                    "Llama-3.2-1B-Instruct-Q8_0.gguf",
+                    "Llama-3.2-1B-Instruct-f16.gguf"
+                ]
+            },
+            "3B": {
+                 "repo_id": "unsloth/Llama-3.2-3B-Instruct-GGUF",
+                 "files": [
+                     "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+                     "Llama-3.2-3B-Instruct-Q6_K.gguf",
+                     "Llama-3.2-3B-Instruct-Q8_0.gguf"
                 ]
             },
         }
@@ -122,7 +180,7 @@ def parse_and_save_benchmark(output, csv_file, model_info):
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Download GGUF model files and run llama-cli")
-parser.add_argument("--model-type", default = "LLAMA3.1" , choices=list(MODEL_FILES.keys()), help="Type of model to download (LLAMA2, LLAMA3, LLAMA3.1)")
+parser.add_argument("--model-type", default = "LLAMA3.2" , choices=list(MODEL_FILES.keys()), help="Type of model to download (LLAMA2, LLAMA3, LLAMA3.1, LLAMA3.2)")
 parser.add_argument("--model-variant", choices=["Chat", "Instruct", ""], help="Variant of model to download (optional)")
 parser.add_argument("--model-size", help="Size of the model to download (optional)")
 parser.add_argument("--prompt", default="Hi you how are you", help="Prompt for llama-cli")
@@ -146,7 +204,7 @@ else:
 if args.model_size:
     model_sizes = [args.model_size]
 else:
-    model_sizes = ["7B", "8B", "13B", "70B"]
+    model_sizes = ["1B","3B","7B", "8B", "13B", "70B"]
 
 # Process each selected model type, variant, and size
 for model_type in model_types:
@@ -172,14 +230,14 @@ for model_type in model_types:
                         for file in files:
                             file_path = os.path.join("models", file)
                             print(f"\nRunning llama-cli with model: {file}")
-                            command = f"./llama-cli -m {file_path} -p '{args.prompt}' -n {args.n} -e -ngl {args.top_k} -t {args.threads}"
+                            command = f"./build/bin/llama-cli -m {file_path} -p '{args.prompt}' -n {args.n} -e -ngl {args.top_k} -t {args.threads}"
                             subprocess.run(command, shell=True, cwd=LLAMACPP_DIR)
 
                         # Run llama-bench for each downloaded model
                         for file in files:
                             file_path = os.path.join("models", file)
                             print(f"\nRunning llama-bench for {model_type} {variant} {size} model: {file}")
-                            bench_command = f"./llama-bench -m {file_path}"
+                            bench_command = f"./build/bin/llama-bench -m {file_path}"
 
                             # Run the benchmark and capture the output
                             result = subprocess.run(bench_command, shell=True, cwd=LLAMACPP_DIR, capture_output=True, text=True)
