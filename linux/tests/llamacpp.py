@@ -25,7 +25,7 @@ def check_and_install_cmake():
         print("CMake is already installed.")
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("CMake not found. Installing CMake...")
-        subprocess.run(["sh", "scripts/install_cmake.sh"], check=True)
+        subprocess.run(["sh", "../scripts/install_cmake.sh"], check=True)
         print("CMake installation completed.")
 
 def build_llamacpp():
