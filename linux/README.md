@@ -13,7 +13,7 @@ sh ./install.sh [ROCM_VERSION]
 ```
 ###### Arguments
 
-- `[ROCM_VERSION]`: Specify the ROCm version to install. If not provided, the default version `6.2.3` will be used.
+- `[ROCM_VERSION]`: Specify the ROCm version to install. If not provided, the default version `6.3.2` will be used.
 
 
 ### Manual Installation
@@ -30,7 +30,7 @@ sudo usermod -aG video $LOGNAME
 ```
 3. Then Simply run below bash file from the corresponding desired ROCm version folder
 ```
-cd ROCm-6.2.3
+cd ROCm-6.3.2
 sudo sh ./install_amd_driver_with_rocm_on_ubuntu.sh
 ```
 4. To install Pytorch
