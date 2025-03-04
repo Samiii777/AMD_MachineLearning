@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Default Go version
-DEFAULT_GO_VERSION="1.22.0"
+DEFAULT_GO_VERSION="1.24.0"
 
 # Use user-provided Go version if provided, otherwise use default
 GO_VERSION=${1:-$DEFAULT_GO_VERSION}
