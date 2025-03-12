@@ -1,4 +1,6 @@
 #!/bin/bash
+# Add bash strict mode to exit on errors
+set -e
 
 LOG_FILE="log.txt"
 
@@ -23,10 +25,15 @@ log() {
 init_rocm_config() {
     local version=${1:-"6.3.4"}
     
-    # Check if version exists in config
-    if ! yq e ".versions.\"$version\"" rocm_config.yml &>/dev/null; then
+    # Check if version exists in config - yq returns "null" for non-existent keys, not an error code
+    local version_exists=$(yq e ".versions.\"$version\"" rocm_config.yml)
+    if [ "$version_exists" = "null" ]; then
         log "ERROR" "Version $version not found in rocm_config.yml"
-        exit 1
+        echo "Error: Version $version not found in configuration!" >&2
+        echo "Available versions:" >&2
+        yq e '.versions | keys | .[]' rocm_config.yml | sed 's/^/  - /' >&2
+        echo "Try using one of the versions listed above." >&2
+        exit 1  # Exit immediately
     fi
     
     # Read configuration for the specified version
@@ -42,6 +49,8 @@ init_rocm_config() {
     # Set TensorFlow and ONNX Runtime URLs as global variables
     TENSORFLOW_URL=$(yq e ".versions.\"$version\".tensorflow.wheel_url" rocm_config.yml)
     ONNXRUNTIME_REPO_URL=$(yq e ".versions.\"$version\".onnxruntime.repo_url" rocm_config.yml)
+    
+    log "INFO" "Successfully loaded configuration for ROCm version $version"
 }
 
 # Function to check and install a package if not present
@@ -203,8 +212,28 @@ display_menu() {
 
 # Main function
 main() {
+    # Install dependencies first
     check_and_install_dependencies
-    init_rocm_config "$1"
+    
+    # Check if a version was provided
+    if [ -n "$1" ]; then
+        log "INFO" "Checking for ROCm version: $1"
+        # This will exit if version is not found
+        init_rocm_config "$1"
+    else
+        # Use default version from metadata if available
+        local default_version=$(yq e ".metadata.default_version" rocm_config.yml)
+        if [ -n "$default_version" ] && [ "$default_version" != "null" ]; then
+            log "INFO" "No version specified, using default: $default_version"
+            init_rocm_config "$default_version"
+        else
+            log "INFO" "Using hardcoded default version: 6.3.4"
+            init_rocm_config "6.3.4"
+        fi
+    fi
+    
+    # If we get here, version check passed
+    log "INFO" "Version check passed, displaying menu"
     
     display_menu
     choice=$?
@@ -246,7 +275,6 @@ main() {
             exit 1
             ;;
     esac
-    
 }
 
 main "$@"
