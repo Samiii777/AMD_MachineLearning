@@ -1,52 +1,252 @@
 #!/bin/bash
 
-## TODO - Create a logging
-# Default ROCm version
+LOG_FILE="log.txt"
 
-amdgpu-uninstall -y
+# Global configuration variables
+ROCM_VERSION=""
+DRIVER_URL=""
+TORCH_URL=""
+TORCHVISION_URL=""
+TRITON_URL=""
+TORCHAUDIO_URL=""
+TENSORFLOW_URL=""
+ONNXRUNTIME_REPO_URL=""
 
-rocm_version="6.3.4"
+# Function to log messages
+log() {
+    local level="$1"
+    local message="$2"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [$level] $message" >> "$LOG_FILE"
+}
 
-# Check if a version argument is provided
-if [ $# -eq 1 ]; then
-  rocm_version=$1
-fi
+# Function to initialize version and load ROCm configuration
+init_rocm_config() {
+    local version=${1:-"6.3.4"}
+    
+    # Check if version exists in config
+    if ! yq e ".versions.\"$version\"" rocm_config.yml &>/dev/null; then
+        log "ERROR" "Version $version not found in rocm_config.yml"
+        exit 1
+    fi
+    
+    # Read configuration for the specified version
+    ROCM_VERSION=$(yq e ".versions.\"$version\".rocm.version" rocm_config.yml)
+    DRIVER_URL=$(yq e ".versions.\"$version\".rocm.driver_url" rocm_config.yml)
 
-# Add user to render and video group
-sudo usermod -aG render $(whoami)
-sudo usermod -aG video $(whoami)
+    # Set PyTorch package wheel URLs as global variables
+    TORCH_URL=$(yq e ".versions.\"$version\".pytorch.wheel_urls.torch" rocm_config.yml)
+    TORCHVISION_URL=$(yq e ".versions.\"$version\".pytorch.wheel_urls.torchvision" rocm_config.yml)
+    TRITON_URL=$(yq e ".versions.\"$version\".pytorch.wheel_urls.triton" rocm_config.yml)
+    TORCHAUDIO_URL=$(yq e ".versions.\"$version\".pytorch.wheel_urls.torchaudio" rocm_config.yml)
 
-# Update and Upgrade Packages
-sudo apt update
-sudo apt dist-upgrade -y
+    # Set TensorFlow and ONNX Runtime URLs as global variables
+    TENSORFLOW_URL=$(yq e ".versions.\"$version\".tensorflow.wheel_url" rocm_config.yml)
+    ONNXRUNTIME_REPO_URL=$(yq e ".versions.\"$version\".onnxruntime.repo_url" rocm_config.yml)
+}
 
-# Install pip3
-sudo apt install python3-pip -y
-pip3 install wheel setuptools
+# Function to check and install a package if not present
+check_and_install_package() {
+    local package_name="$1"
+    if dpkg-query -W -f='${db:Status-Status}' "$package_name" 2>/dev/null | grep -q "installed"; then
+        log "INFO" "$package_name is already installed."
+    else
+        log "INFO" "$package_name is not installed. Installing..."
+        sudo apt update
+        sudo apt install "$package_name" -y
+        log "INFO" "$package_name has been successfully installed."
+    fi
+}
 
-## TODO - Create a package checker function
-# Install Libstdc++-12-dev that is required for pytorch
-sudo apt install libstdc++-12-dev -y
-sudo apt install libclblast-dev -y
+# Function to check if a pip package is installed and install it if not
+check_and_install_pip_package() {
+    local package_name="$1"
+    if pip3 list | grep "^$package_name " > /dev/null; then
+        log "INFO" "$package_name is already installed."
+    else
+        log "INFO" "$package_name not found, installing..."
+        pip3 install "$package_name"
+        log "INFO" "$package_name has been installed."
+    fi
+}
 
-# Install ROCm with the specified version
-sudo sh "rocm/rocm-${rocm_version}/install_amd_driver_with_rocm_on_ubuntu.sh"
-sudo sh "rocm/rocm-${rocm_version}/install_pytorch.sh"
-sudo sh "rocm/rocm-${rocm_version}/install_onnxruntime.sh"
-sudo sh "rocm/rocm-${rocm_version}/install_tensorflow.sh"
+# Function to install yq for parsing YAML
+install_yq() {
+    if ! command -v yq &> /dev/null; then
+        log "INFO" "yq could not be found, installing..."
+        sudo snap install yq
+    fi
+}
 
-pip3 install -r requirements.txt
-# Prompt the user to reboot or not
-python3 tests/test_pytorch.py
-python3 tests/test_onnxruntime.py
-python3 tests/test_tensorflow.py
+# Function to install AMD Driver
+install_amd_driver() {
+    # Check if amdgpu-uninstall exists
+    if ! command -v amdgpu-uninstall &> /dev/null
+    then
+        log "INFO" "amdgpu-uninstall not found, skipping uninstallation..."
+    else
+       log "INFO" "Uninstalling existing AMD GPU drivers..."
+        amdgpu-uninstall -y
+    fi
 
-read -p "Do you want to reboot the system now? (y/n): " choice
-case "$choice" in
-  y|Y )
-    shutdown -r now ;;
-  n|N )
-    echo "Reboot skipped. You may need to restart the system later for changes to take effect." ;;
-  * )
-    echo "Invalid choice. Reboot skipped. You may need to restart the system later for changes to take effect." ;;
-esac
+    log "INFO" "Downloading and installing AMD Driver..."
+    wget -P /tmp/ "$DRIVER_URL"
+    sudo apt install -y /tmp/$(basename "$DRIVER_URL")
+    amdgpu-install -y --usecase=graphics,rocm
+
+    # Add user to render and video group
+    sudo usermod -aG render "$(whoami)"
+    sudo usermod -aG video "$(whoami)"
+}
+
+# Function to install PyTorch and related packages
+install_pytorch() {
+    # Directory to store downloaded wheel files
+    WHEEL_DIR="/tmp/wheels"
+    mkdir -p "$WHEEL_DIR"
+
+    # Array of package names and their corresponding URLs
+    local packages=("torch" "torchvision" "triton" "torchaudio")
+    local urls=("$TORCH_URL" "$TORCHVISION_URL" "$TRITON_URL" "$TORCHAUDIO_URL")
+
+    for i in "${!packages[@]}"; do
+        package="${packages[$i]}"
+        wheel_url="${urls[$i]}"
+        wheel_file="$WHEEL_DIR/$(basename "$wheel_url")"
+        
+        if pip3 list | grep "^$package "; then
+            log "INFO" "$package is already installed. Uninstalling..."
+            pip3 uninstall "$package" -y
+        fi
+
+        # Check if the wheel file already exists
+        if [ ! -f "$wheel_file" ]; then
+            log "INFO" "Downloading $package wheel from $wheel_url..."
+            wget -O "$wheel_file" "$wheel_url"
+        else
+            log "INFO" "$package wheel already exists at $wheel_file. Skipping download."
+        fi
+
+        log "INFO" "Installing $package from $wheel_file..."
+        pip3 install "$wheel_file"
+        log "INFO" "Installed $package from $wheel_file."
+    done
+}
+
+# Function to install TensorFlow
+install_tensorflow() {
+    log "INFO" "Installing TensorFlow from $TENSORFLOW_URL..."
+    pip3 install "$TENSORFLOW_URL"
+    log "INFO" "TensorFlow installed."
+}
+
+# Function to install ONNX Runtime
+install_onnx_runtime() {
+    log "INFO" "Installing ONNX Runtime from $ONNXRUNTIME_REPO_URL..."
+    check_and_install_package "migraphx"
+    check_and_install_package "half"
+    if pip3 list | grep -E "onnxruntime(-rocm)?"; then
+        log "INFO" "Found existing ONNX Runtime installation, uninstalling..."
+        pip3 uninstall onnxruntime-rocm onnxruntime -y
+    fi
+    pip3 install onnxruntime-rocm -f "$ONNXRUNTIME_REPO_URL"
+    if pip3 list | grep -E "onnxruntime(-rocm)?"; then
+        log "INFO" "ONNX Runtime is successfully installed."
+    fi
+}
+
+# Function to run tests
+run_tests() {
+    log "INFO" "Running tests..."
+    python3 tests/test_pytorch.py
+    python3 tests/test_onnxruntime.py 
+    python3 tests/test_tensorflow.py
+    log "INFO" "Tests completed."
+}
+
+# Function to prompt the user to reboot or not
+prompt_reboot() {
+    read -p "Do you want to reboot the system now? (y/n): " choice
+    case "$choice" in
+      y|Y )
+        shutdown -r now ;;
+      n|N )
+        log "INFO" "Reboot skipped. You may need to restart the system later for changes to take effect." ;;
+      * )
+        log "INFO" "Invalid choice. Reboot skipped. You may need to restart the system later for changes to take effect." ;;
+    esac
+}
+
+# Function to check and install all necessary packages
+check_and_install_dependencies() {
+    install_yq
+    check_and_install_package "python3-pip"
+    check_and_install_pip_package "wheel"
+    check_and_install_pip_package "setuptools"
+    check_and_install_package "libstdc++-12-dev"
+    check_and_install_package "libclblast-dev"
+}
+
+# Function to display installation options
+display_menu() {
+    echo "Please select an installation option:"
+    echo "1. Install everything (driver + all frameworks)"
+    echo "2. Install driver only"
+    echo "3. Install all ML frameworks (PyTorch, TensorFlow, ONNX Runtime)"
+    echo "4. Install PyTorch only"
+    echo "5. Install TensorFlow only" 
+    echo "6. Install ONNX Runtime only"
+    echo "7. Quick system check"
+    read -p "Enter your choice (1-7): " choice
+    echo
+    return "$choice"
+}
+
+# Main function
+main() {
+    check_and_install_dependencies
+    init_rocm_config "$1"
+    
+    display_menu
+    choice=$?
+    
+    case $choice in
+        1)
+            install_amd_driver
+            install_pytorch
+            install_tensorflow
+            install_onnx_runtime
+            run_tests
+            ;;
+        2)
+            install_amd_driver
+            ;;
+        3)
+            install_pytorch
+            install_tensorflow
+            install_onnx_runtime
+            run_tests
+            ;;
+        4)
+            install_pytorch
+            python3 tests/test_pytorch.py
+            ;;
+        5)
+            install_tensorflow
+            python3 tests/test_tensorflow.py
+            ;;
+        6)
+            install_onnx_runtime
+            python3 tests/test_onnxruntime.py
+            ;;
+        7)
+            run_tests
+            ;;
+        *)
+            log "ERROR" "Invalid option selected. Exiting..."
+            exit 1
+            ;;
+    esac
+    
+}
+
+main "$@"
