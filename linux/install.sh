@@ -206,14 +206,13 @@ display_menu() {
     echo "5. Install TensorFlow only" 
     echo "6. Install ONNX Runtime only"
     echo "7. Quick system check"
-    read -p "Enter your choice (1-7): " choice
+    read -p "Enter your choice (1-7): " MENU_CHOICE
     echo
-    return "$choice"
 }
 
 # Main function
 main() {
-    # Install dependencies first
+    #    # Install dependencies first
     check_and_install_dependencies
     
     # Check if a version was provided
@@ -237,9 +236,8 @@ main() {
     log "INFO" "Version check passed, displaying menu"
     
     display_menu
-    choice=$?
     
-    case $choice in
+    case $MENU_CHOICE in
         1)
             install_amd_driver
             install_pytorch
@@ -247,6 +245,7 @@ main() {
             install_onnx_runtime
             run_tests
             pip3 install -r requirements.txt
+            prompt_reboot
             ;;
         2)
             install_amd_driver
