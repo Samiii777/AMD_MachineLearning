@@ -145,6 +145,7 @@ install_pytorch() {
 install_tensorflow() {
     log "INFO" "Installing TensorFlow from $TENSORFLOW_URL..."
     pip3 install "$TENSORFLOW_URL"
+    pip3 install tf-keras --no-deps
     log "INFO" "TensorFlow installed."
 }
 
