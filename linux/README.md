@@ -1,47 +1,38 @@
 ## Overview
 
-This guide includes both automatic and manual installation methods for setting up the AMD driver with ROCm, along with installation instructions for popular machine learning frameworks such as PyTorch and OnnxRuntime.
+This guide includes an automatic installation method for setting up the AMD driver with ROCm, along with installation instructions for popular machine learning frameworks such as PyTorch, TensorFlow, and ONNX Runtime.
 
 ## Installation
 
 ### Automatic Installation
 
-To automatically install the AMD driver with ROCm, PyTorch and ONNXRuntime simply run the following command:
+To automatically install the AMD driver with ROCm, PyTorch, TensorFlow, and ONNXRuntime, simply run the following command:
 
 ```bash
-sh ./install.sh [ROCM_VERSION]
+bash ./install.sh [ROCM_VERSION]
 ```
-###### Arguments
 
-- `[ROCM_VERSION]`: Specify the ROCm version to install. If not provided, the default version `6.3.4` will be used.
+- **Arguments**:
+  - `[ROCM_VERSION]`: Specify the ROCm version to install. Defaults to `6.3.4` if not provided.
 
+### Configuration
 
-### Manual Installation
+The `install.sh` script uses a configuration file named `rocm_config.yml` to determine the correct URLs for downloading the necessary packages for the specified ROCm version. The configuration file should include the following structure:
 
-1. First we need to update our packages
-```
-sudo apt update
-sudo apt dist-upgrade -y
-```
-2. Run below commands manually in terminal and reboot the system
-```
-sudo usermod -aG render $LOGNAME
-sudo usermod -aG video $LOGNAME
-```
-3. Then Simply run below bash file from the corresponding desired ROCm version folder
-```
-cd ROCm-6.3.4
-sudo sh ./install_amd_driver_with_rocm_on_ubuntu.sh
-```
-4. To install Pytorch
-```
-sh ./install_pytorch.sh
-```
-5. To install OnnxRuntime (will install MIGraphX as well)
-```
-sh ./install_onnxruntime.sh
-```
-6. To install TensorFlow
-```
-sh ./install_tensorflow.sh
-```
+```yaml
+versions:
+  "6.3.4":
+    rocm:
+      version: "6.3.4"
+      driver_url: "<driver_url>"
+    pytorch:
+      wheel_urls:
+        torch: "<torch_wheel_url>"
+        torchvision: "<torchvision_wheel_url>"
+        triton: "<triton_wheel_url>"
+        torchaudio: "<torchaudio_wheel_url>"
+    tensorflow:
+      wheel_url: "<tensorflow_wheel_url>"
+    onnxruntime:
+      repo_url: "<onnxruntime_repo_url>"
+
