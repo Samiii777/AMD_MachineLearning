@@ -1,0 +1,14 @@
+   versions:
+     "6.3.4":
+       rocm:
+         driver_url: "https://repo.radeon.com/amdgpu-install/6.3.4/ubuntu/jammy/amdgpu-install_6.3.60304-1_all.deb"
+       pytorch:
+         wheel_urls:
+            torch: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/torch-2.4.0%2Brocm6.3.4.git7cecbf6d-cp310-cp310-linux_x86_64.whl"
+            torchvision: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/torchvision-0.19.0%2Brocm6.3.4.gitfab84886-cp310-cp310-linux_x86_64.whl"
+            triton: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/pytorch_triton_rocm-3.0.0%2Brocm6.3.4.git75cc27c2-cp310-cp310-linux_x86_64.whl"
+            torchaudio: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/torchaudio-2.4.0%2Brocm6.3.4.git69d40773-cp310-cp310-linux_x86_64.whl"
+       tensorflow:
+         wheel_url: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/tensorflow_rocm-2.17.0-cp310-cp310-manylinux_2_28_x86_64.whl"
+       onnxruntime:
+         repo_url: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/"
