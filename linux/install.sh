@@ -154,7 +154,7 @@ install_onnx_runtime() {
     log "INFO" "Installing ONNX Runtime from $ONNXRUNTIME_REPO_URL..."
     check_and_install_package "migraphx"
     check_and_install_package "half"
-    if pip3 list | grep -E "onnxruntime(-rocm)?"; then
+    if pip3 list | grep -E "onnxruntime(-rocm)?|onnxruntime$"; then
         log "INFO" "Found existing ONNX Runtime installation, uninstalling..."
         pip3 uninstall onnxruntime-rocm onnxruntime -y
     fi
@@ -212,7 +212,6 @@ display_menu() {
 
 # Main function
 main() {
-    #    # Install dependencies first
     check_and_install_dependencies
     
     # Check if a version was provided
