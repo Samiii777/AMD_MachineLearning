@@ -246,6 +246,7 @@ main() {
             install_tensorflow
             install_onnx_runtime
             run_tests
+            pip3 install -r requirements.txt
             ;;
         2)
             install_amd_driver
@@ -255,18 +256,22 @@ main() {
             install_tensorflow
             install_onnx_runtime
             run_tests
+            pip3 install -r requirements.txt
             ;;
         4)
             install_pytorch
             python3 tests/test_pytorch.py
+            pip3 install -r requirements.txt
             ;;
         5)
             install_tensorflow
             python3 tests/test_tensorflow.py
+            pip3 install -r requirements.txt
             ;;
         6)
             install_onnx_runtime
             python3 tests/test_onnxruntime.py
+            pip3 install -r requirements.txt
             ;;
         7)
             run_tests
