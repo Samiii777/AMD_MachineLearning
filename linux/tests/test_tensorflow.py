@@ -12,8 +12,8 @@ def log(level, message):
 # Check if GPU is available through TensorFlow
 if tf.config.list_physical_devices('GPU'):
     gpus = tf.config.list_physical_devices('GPU')
-    log("INFO", f"GPU is available. Found {len(gpus)} GPU device(s).")
-    log("INFO", f"Installed version of TensorFlow: {tf.__version__}")
+    log("TF_TEST", f"GPU is available. Found {len(gpus)} GPU device(s).")
+    log("TF_TEST", f"Installed version of TensorFlow: {tf.__version__}")
         
     # Test basic GPU operation
     with tf.device('/GPU:0'):
@@ -21,10 +21,10 @@ if tf.config.list_physical_devices('GPU'):
             a = tf.constant([[1.0, 2.0], [3.0, 4.0]])
             b = tf.constant([[5.0, 6.0], [7.0, 8.0]])
             c = tf.matmul(a, b)
-            log("INFO", "Successfully ran a basic GPU operation.")
+            log("TF_TEST", "Successfully ran a basic GPU operation.")
         except Exception as e:
-            log("ERROR", f"Failed to run operations on GPU: {str(e)}")
+            log("TF_TEST", f"Failed to run operations on GPU: {str(e)}")
 else:
-    log("ERROR", "GPU is not available for TensorFlow.")
-    log("ERROR", "Make sure you have installed the GPU version of TensorFlow")
-    log("ERROR", "You may need to restart your system if you haven't done so after installation.")
+    log("TF_TEST", "GPU is not available for TensorFlow.")
+    log("TF_TEST", "Make sure you have installed the GPU version of TensorFlow")
+    log("TF_TEST", "You may need to restart your system if you haven't done so after installation.")
