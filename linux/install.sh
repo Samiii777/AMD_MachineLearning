@@ -1,5 +1,4 @@
 #!/bin/bash
-# Add bash strict mode to exit on errors
 set -e
 
 LOG_FILE="log.txt"
@@ -13,12 +12,37 @@ TRITON_URL=""
 TORCHAUDIO_URL=""
 TENSORFLOW_URL=""
 ONNXRUNTIME_REPO_URL=""
+USE_VENV=false
+VENV_PATH="./venv"
 
 # Function to log messages
 log() {
     local level="$1"
     local message="$2"
     echo "$(date '+%Y-%m-%d %H:%M:%S') [$level] $message" >> "$LOG_FILE"
+}
+
+# Function to setup virtual environment
+setup_virtual_env() {
+    if [ "$USE_VENV" = true ]; then
+        log "INFO" "Setting up virtual environment at $VENV_PATH"
+        check_and_install_package "python3-venv"
+        
+        if [ -d "$VENV_PATH" ]; then
+            log "INFO" "Virtual environment already exists at $VENV_PATH"
+        else
+            log "INFO" "Creating new virtual environment at $VENV_PATH"
+            python3 -m venv "$VENV_PATH"
+        fi
+        
+        # Activate virtual environment
+        source "$VENV_PATH/bin/activate"
+        log "INFO" "Virtual environment activated"
+        
+        # Upgrade pip in virtual environment
+        pip3 install --upgrade pip
+        log "INFO" "Pip upgraded in virtual environment"
+    fi
 }
 
 # Function to initialize version and load ROCm configuration
@@ -69,12 +93,25 @@ check_and_install_package() {
 # Function to check if a pip package is installed and install it if not
 check_and_install_pip_package() {
     local package_name="$1"
-    if pip3 list | grep "^$package_name " > /dev/null; then
-        log "INFO" "$package_name is already installed."
+    
+    if [ "$USE_VENV" = true ]; then
+        # We're in an activated virtual environment, so use regular pip3 command
+        if pip3 list | grep "^$package_name " > /dev/null; then
+            log "INFO" "$package_name is already installed."
+        else
+            log "INFO" "$package_name not found, installing..."
+            pip3 install "$package_name"
+            log "INFO" "$package_name has been installed."
+        fi
     else
-        log "INFO" "$package_name not found, installing..."
-        pip3 install "$package_name"
-        log "INFO" "$package_name has been installed."
+        # Use system pip
+        if pip3 list | grep "^$package_name " > /dev/null; then
+            log "INFO" "$package_name is already installed."
+        else
+            log "INFO" "$package_name not found, installing..."
+            pip3 install "$package_name"
+            log "INFO" "$package_name has been installed."
+        fi
     fi
 }
 
@@ -152,7 +189,6 @@ install_pytorch() {
     log "INFO" "All packages installed successfully."
 }
 
-
 # Function to install TensorFlow
 install_tensorflow() {
     log "INFO" "Installing TensorFlow from $TENSORFLOW_URL..."
@@ -166,6 +202,7 @@ install_onnx_runtime() {
     log "INFO" "Installing ONNX Runtime from $ONNXRUNTIME_REPO_URL..."
     check_and_install_package "migraphx"
     check_and_install_package "half"
+    
     if pip3 list | grep -E "onnxruntime(-rocm)?|onnxruntime?|onnxruntime(-gpu)$|^onnx$"; then
         log "INFO" "Found existing ONNX Runtime installation, uninstalling..."
         pip3 uninstall onnxruntime-rocm onnxruntime -y
@@ -208,6 +245,13 @@ check_and_install_dependencies() {
     check_and_install_package "libclblast-dev"
 }
 
+# Function to install requirements.txt
+install_requirements() {
+    log "INFO" "Installing requirements from requirements.txt..."
+    pip3 install -r requirements.txt
+    log "INFO" "Requirements installed."
+}
+
 # Function to display installation options
 display_menu() {
     echo "Please select an installation option:"
@@ -222,15 +266,45 @@ display_menu() {
     echo
 }
 
+# Parse command line arguments
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --venv)
+                USE_VENV=true
+                shift
+                ;;
+            --venv-path)
+                if [[ -n "$2" && "$2" != --* ]]; then
+                    VENV_PATH="$2"
+                    USE_VENV=true
+                    shift 2
+                else
+                    log "ERROR" "Argument for $1 is missing"
+                    exit 1
+                fi
+                ;;
+            *)
+                # Assume it's a version number
+                VERSION_ARG="$1"
+                shift
+                ;;
+        esac
+    done
+}
+
 # Main function
 main() {
+    # Parse command line arguments first
+    parse_arguments "$@"
+    
     check_and_install_dependencies
     
     # Check if a version was provided
-    if [ -n "$1" ]; then
-        log "INFO" "Checking for ROCm version: $1"
+    if [ -n "$VERSION_ARG" ]; then
+        log "INFO" "Checking for ROCm version: $VERSION_ARG"
         # This will exit if version is not found
-        init_rocm_config "$1"
+        init_rocm_config "$VERSION_ARG"
     else
         # Use default version from metadata if available
         local default_version=$(yq e ".metadata.default_version" rocm_config.yml)
@@ -241,6 +315,12 @@ main() {
             log "INFO" "Using hardcoded default version: 6.3.4"
             init_rocm_config "6.3.4"
         fi
+    fi
+    
+    # Setup virtual environment if requested
+    if [ "$USE_VENV" = true ]; then
+        setup_virtual_env
+        log "INFO" "Using virtual environment at $VENV_PATH"
     fi
     
     # If we get here, version check passed
@@ -255,7 +335,7 @@ main() {
             install_tensorflow
             install_onnx_runtime
             run_tests
-            pip3 install -r requirements.txt
+            install_requirements
             prompt_reboot
             ;;
         2)
@@ -266,22 +346,22 @@ main() {
             install_tensorflow
             install_onnx_runtime
             run_tests
-            pip3 install -r requirements.txt
+            install_requirements
             ;;
         4)
             install_pytorch
             python3 tests/test_pytorch.py
-            pip3 install -r requirements.txt
+            install_requirements
             ;;
         5)
             install_tensorflow
             python3 tests/test_tensorflow.py
-            pip3 install -r requirements.txt
+            install_requirements
             ;;
         6)
             install_onnx_runtime
             python3 tests/test_onnxruntime.py
-            pip3 install -r requirements.txt
+            install_requirements
             ;;
         7)
             run_tests
@@ -291,6 +371,12 @@ main() {
             exit 1
             ;;
     esac
+    
+    # Deactivate virtual environment if it was used
+    if [ "$USE_VENV" = true ]; then
+        deactivate 2>/dev/null || true
+        log "INFO" "Virtual environment deactivated"
+    fi
 }
 
 main "$@"
