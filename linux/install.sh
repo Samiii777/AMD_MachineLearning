@@ -109,37 +109,49 @@ install_amd_driver() {
 
 # Function to install PyTorch and related packages
 install_pytorch() {
-    # Directory to store downloaded wheel files
     WHEEL_DIR="/tmp/wheels"
     mkdir -p "$WHEEL_DIR"
 
-    # Array of package names and their corresponding URLs
     local packages=("torch" "torchvision" "triton" "torchaudio")
-    local urls=("$TORCH_URL" "$TORCHVISION_URL" "$TRITON_URL" "$TORCHAUDIO_URL")
+    local urls=("$TRITON_URL" "$TORCH_URL" "$TORCHVISION_URL" "$TORCHAUDIO_URL")
 
+    for url in "${urls[@]}"; do
+        if [ -z "$url" ]; then
+            log "ERROR: One or more package URLs are not set. Exiting."
+            return 1
+        fi
+    done
+
+    local wheel_files=()
     for i in "${!packages[@]}"; do
         package="${packages[$i]}"
         wheel_url="${urls[$i]}"
         wheel_file="$WHEEL_DIR/$(basename "$wheel_url")"
-        
-        if pip3 list | grep "^$package "; then
-            log "INFO" "$package is already installed. Uninstalling..."
-            pip3 uninstall "$package" -y
-        fi
 
-        # Check if the wheel file already exists
+        # Download the wheel file if it doesn't already exist
         if [ ! -f "$wheel_file" ]; then
-            log "INFO" "Downloading $package wheel from $wheel_url..."
-            wget -O "$wheel_file" "$wheel_url"
+            log "INFO: Downloading $package wheel from $wheel_url..."
+            wget -O "$wheel_file" "$wheel_url" || {
+                log "ERROR: Failed to download $package from $wheel_url."
+                return 1
+            }
         else
-            log "INFO" "$package wheel already exists at $wheel_file. Skipping download."
+            echo "INFO: $package wheel already exists at $wheel_file. Skipping download."
         fi
 
-        log "INFO" "Installing $package from $wheel_file..."
-        pip3 install "$wheel_file"
-        log "INFO" "Installed $package from $wheel_file."
+        # Add the wheel file to the list for batch installation
+        wheel_files+=("$wheel_file")
     done
+
+    log "INFO: Installing all packages from downloaded wheels..."
+    pip3 install "${wheel_files[@]}" --force-reinstall || {
+        log "ERROR: Failed to install one or more packages."
+        return 1
+    }
+
+    log "INFO: All packages installed successfully."
 }
+
 
 # Function to install TensorFlow
 install_tensorflow() {
@@ -154,7 +166,7 @@ install_onnx_runtime() {
     log "INFO" "Installing ONNX Runtime from $ONNXRUNTIME_REPO_URL..."
     check_and_install_package "migraphx"
     check_and_install_package "half"
-    if pip3 list | grep -E "onnxruntime(-rocm)?|onnxruntime$"; then
+    if pip3 list | grep -E "onnxruntime(-rocm)?|onnxruntime?|onnxruntime(-gpu)$|^onnx$"; then
         log "INFO" "Found existing ONNX Runtime installation, uninstalling..."
         pip3 uninstall onnxruntime-rocm onnxruntime -y
     fi
