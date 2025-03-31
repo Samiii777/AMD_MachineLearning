@@ -29,7 +29,7 @@ init_rocm_config() {
     local version_exists=$(yq e ".versions.\"$version\"" rocm_config.yml)
     if [ "$version_exists" = "null" ]; then
         log "ERROR" "Version $version not found in rocm_config.yml"
-        echo "Error: Version $version not found in configuration!" >&2
+        echo "Error" "Version $version not found in configuration!" >&2
         echo "Available versions:" >&2
         yq e '.versions | keys | .[]' rocm_config.yml | sed 's/^/  - /' >&2
         echo "Try using one of the versions listed above." >&2
@@ -117,7 +117,7 @@ install_pytorch() {
 
     for url in "${urls[@]}"; do
         if [ -z "$url" ]; then
-            log "ERROR: One or more package URLs are not set. Exiting."
+            log "ERROR" "One or more package URLs are not set. Exiting."
             return 1
         fi
     done
@@ -130,26 +130,26 @@ install_pytorch() {
 
         # Download the wheel file if it doesn't already exist
         if [ ! -f "$wheel_file" ]; then
-            log "INFO: Downloading $package wheel from $wheel_url..."
+            log "INFO" "Downloading $package wheel from $wheel_url..."
             wget -O "$wheel_file" "$wheel_url" || {
-                log "ERROR: Failed to download $package from $wheel_url."
+                log "ERROR" "Failed to download $package from $wheel_url."
                 return 1
             }
         else
-            echo "INFO: $package wheel already exists at $wheel_file. Skipping download."
+            log "INFO" "$package wheel already exists at $wheel_file. Skipping download."
         fi
 
         # Add the wheel file to the list for batch installation
         wheel_files+=("$wheel_file")
     done
 
-    log "INFO: Installing all packages from downloaded wheels..."
+    log "INFO" "Installing all packages from downloaded wheels..."
     pip3 install "${wheel_files[@]}" --force-reinstall || {
-        log "ERROR: Failed to install one or more packages."
+        log "ERROR" "Failed to install one or more packages."
         return 1
     }
 
-    log "INFO: All packages installed successfully."
+    log "INFO" "All packages installed successfully."
 }
 
 
