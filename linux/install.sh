@@ -5,6 +5,9 @@ LOG_FILE="log.txt"
 
 # Global configuration variables
 ROCM_VERSION=""
+UBUNTU_VERSION=""
+PYTHON_VERSION=""
+PIP_FLAGS=""
 DRIVER_URL=""
 TORCH_URL=""
 TORCHVISION_URL=""
@@ -20,6 +23,80 @@ log() {
     local level="$1"
     local message="$2"
     echo "$(date '+%Y-%m-%d %H:%M:%S') [$level] $message" >> "$LOG_FILE"
+}
+
+# Function to detect Ubuntu version and set appropriate pip flags
+detect_os() {
+    log "INFO" "Detecting operating system..."
+    
+    # Detect Ubuntu version
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        if [ "$ID" = "ubuntu" ]; then
+            UBUNTU_VERSION=$VERSION_ID
+            log "INFO" "Detected Ubuntu $UBUNTU_VERSION"
+            
+            # Set pip flags based on Ubuntu version
+            case "$UBUNTU_VERSION" in
+                "22.04")
+                    PYTHON_VERSION="cp310"
+                    PIP_FLAGS=""
+                    log "INFO" "Using Python 3.10 packages"
+                    ;;
+                "24.04")
+                    PYTHON_VERSION="cp312"
+                    PIP_FLAGS="--break-system-packages --no-warn-script-location"
+                    log "INFO" "Using Python 3.12 packages with --break-system-packages flag"
+                    # Ensure ~/.local/bin is in PATH for Ubuntu 24.04
+                    ensure_local_bin_in_path
+                    ;;
+                *)
+                    log "WARNING" "Ubuntu version $UBUNTU_VERSION not explicitly supported, defaulting to 22.04 settings"
+                    UBUNTU_VERSION="22.04"
+                    PYTHON_VERSION="cp310"
+                    PIP_FLAGS=""
+                    ;;
+            esac
+        else
+            log "ERROR" "This script only supports Ubuntu. Detected OS: $ID"
+            exit 1
+        fi
+    else
+        log "ERROR" "Cannot detect operating system. /etc/os-release not found."
+        exit 1
+    fi
+}
+
+# Function to ensure ~/.local/bin is in PATH
+ensure_local_bin_in_path() {
+    local local_bin="$HOME/.local/bin"
+    
+    # Check if ~/.local/bin is already in PATH
+    if [[ ":$PATH:" != *":$local_bin:"* ]]; then
+        log "INFO" "Adding ~/.local/bin to PATH for this session"
+        export PATH="$PATH:$local_bin"
+        
+        # Add to shell profile for persistence
+        local shell_profile=""
+        if [ -n "$BASH_VERSION" ]; then
+            shell_profile="$HOME/.bashrc"
+        elif [ -n "$ZSH_VERSION" ]; then
+            shell_profile="$HOME/.zshrc"
+        else
+            shell_profile="$HOME/.profile"
+        fi
+        
+        # Check if the PATH export is not already in the profile
+        if [ -f "$shell_profile" ] && ! grep -q "export PATH.*\.local/bin" "$shell_profile"; then
+            log "INFO" "Adding ~/.local/bin to PATH in $shell_profile"
+            echo "" >> "$shell_profile"
+            echo "# Added by ROCm install script" >> "$shell_profile"
+            echo "export PATH=\"\$PATH:\$HOME/.local/bin\"" >> "$shell_profile"
+            log "INFO" "Please run 'source $shell_profile' or restart your terminal after installation"
+        fi
+    else
+        log "INFO" "~/.local/bin is already in PATH"
+    fi
 }
 
 # Function to setup virtual environment
@@ -39,7 +116,7 @@ setup_virtual_env() {
         source "$VENV_PATH/bin/activate"
         log "INFO" "Virtual environment activated"
         
-        # Upgrade pip in virtual environment
+        # Upgrade pip in virtual environment (no --break-system-packages needed in venv)
         pip3 install --upgrade pip
         log "INFO" "Pip upgraded in virtual environment"
     fi
@@ -47,34 +124,44 @@ setup_virtual_env() {
 
 # Function to initialize version and load ROCm configuration
 init_rocm_config() {
-    local version=${1:-"6.3.4"}
+    local version=${1:-"6.4.1"}
     
-    # Check if version exists in config - yq returns "null" for non-existent keys, not an error code
+    # Check if version exists in config
     local version_exists=$(yq e ".versions.\"$version\"" rocm_config.yml)
     if [ "$version_exists" = "null" ]; then
         log "ERROR" "Version $version not found in rocm_config.yml"
-        echo "Error" "Version $version not found in configuration!" >&2
+        echo "Error: Version $version not found in configuration!" >&2
         echo "Available versions:" >&2
         yq e '.versions | keys | .[]' rocm_config.yml | sed 's/^/  - /' >&2
         echo "Try using one of the versions listed above." >&2
-        exit 1  # Exit immediately
+        exit 1
     fi
     
-    # Read configuration for the specified version
-    ROCM_VERSION=$(yq e ".versions.\"$version\".rocm.version" rocm_config.yml)
-    DRIVER_URL=$(yq e ".versions.\"$version\".rocm.driver_url" rocm_config.yml)
+    # Check if Ubuntu version is supported for this ROCm version
+    local ubuntu_config=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\"" rocm_config.yml)
+    if [ "$ubuntu_config" = "null" ]; then
+        log "ERROR" "Ubuntu $UBUNTU_VERSION not supported for ROCm version $version"
+        echo "Error: Ubuntu $UBUNTU_VERSION not supported for ROCm version $version!" >&2
+        echo "Supported Ubuntu versions for ROCm $version:" >&2
+        yq e ".versions.\"$version\".ubuntu | keys | .[]" rocm_config.yml | sed 's/^/  - /' >&2
+        exit 1
+    fi
+    
+    # Read configuration for the specified version and Ubuntu version
+    ROCM_VERSION="$version"
+    DRIVER_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".rocm.driver_url" rocm_config.yml)
 
     # Set PyTorch package wheel URLs as global variables
-    TORCH_URL=$(yq e ".versions.\"$version\".pytorch.wheel_urls.torch" rocm_config.yml)
-    TORCHVISION_URL=$(yq e ".versions.\"$version\".pytorch.wheel_urls.torchvision" rocm_config.yml)
-    TRITON_URL=$(yq e ".versions.\"$version\".pytorch.wheel_urls.triton" rocm_config.yml)
-    TORCHAUDIO_URL=$(yq e ".versions.\"$version\".pytorch.wheel_urls.torchaudio" rocm_config.yml)
+    TORCH_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".pytorch.wheel_urls.torch" rocm_config.yml)
+    TORCHVISION_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".pytorch.wheel_urls.torchvision" rocm_config.yml)
+    TRITON_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".pytorch.wheel_urls.triton" rocm_config.yml)
+    TORCHAUDIO_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".pytorch.wheel_urls.torchaudio" rocm_config.yml)
 
     # Set TensorFlow and ONNX Runtime URLs as global variables
-    TENSORFLOW_URL=$(yq e ".versions.\"$version\".tensorflow.wheel_url" rocm_config.yml)
-    ONNXRUNTIME_REPO_URL=$(yq e ".versions.\"$version\".onnxruntime.repo_url" rocm_config.yml)
+    TENSORFLOW_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".tensorflow.wheel_url" rocm_config.yml)
+    ONNXRUNTIME_REPO_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".onnxruntime.repo_url" rocm_config.yml)
     
-    log "INFO" "Successfully loaded configuration for ROCm version $version"
+    log "INFO" "Successfully loaded configuration for ROCm version $version on Ubuntu $UBUNTU_VERSION"
 }
 
 # Function to check and install a package if not present
@@ -104,12 +191,12 @@ check_and_install_pip_package() {
             log "INFO" "$package_name has been installed."
         fi
     else
-        # Use system pip
+        # Use system pip with appropriate flags
         if pip3 list | grep "^$package_name " > /dev/null; then
             log "INFO" "$package_name is already installed."
         else
             log "INFO" "$package_name not found, installing..."
-            pip3 install "$package_name"
+            pip3 install "$package_name" $PIP_FLAGS
             log "INFO" "$package_name has been installed."
         fi
     fi
@@ -181,10 +268,17 @@ install_pytorch() {
     done
 
     log "INFO" "Installing all packages from downloaded wheels..."
-    pip3 install "${wheel_files[@]}" --force-reinstall || {
-        log "ERROR" "Failed to install one or more packages."
-        return 1
-    }
+    if [ "$USE_VENV" = true ]; then
+        pip3 install "${wheel_files[@]}" --force-reinstall || {
+            log "ERROR" "Failed to install one or more packages."
+            return 1
+        }
+    else
+        pip3 install "${wheel_files[@]}" --force-reinstall $PIP_FLAGS || {
+            log "ERROR" "Failed to install one or more packages."
+            return 1
+        }
+    fi
 
     log "INFO" "All packages installed successfully."
 }
@@ -192,8 +286,13 @@ install_pytorch() {
 # Function to install TensorFlow
 install_tensorflow() {
     log "INFO" "Installing TensorFlow from $TENSORFLOW_URL..."
-    pip3 install "$TENSORFLOW_URL"
-    pip3 install tf-keras --no-deps
+    if [ "$USE_VENV" = true ]; then
+        pip3 install "$TENSORFLOW_URL"
+        pip3 install tf-keras --no-deps
+    else
+        pip3 install "$TENSORFLOW_URL" $PIP_FLAGS
+        pip3 install tf-keras --no-deps $PIP_FLAGS
+    fi
     log "INFO" "TensorFlow installed."
 }
 
@@ -205,20 +304,140 @@ install_onnx_runtime() {
     
     if pip3 list | grep -E "onnxruntime(-rocm)?|onnxruntime?|onnxruntime(-gpu)$|^onnx$"; then
         log "INFO" "Found existing ONNX Runtime installation, uninstalling..."
-        pip3 uninstall onnxruntime-rocm onnxruntime -y
+        if [ "$USE_VENV" = true ]; then
+            pip3 uninstall onnxruntime-rocm onnxruntime -y
+        else
+            pip3 uninstall onnxruntime-rocm onnxruntime -y $PIP_FLAGS
+        fi
     fi
-    pip3 install onnxruntime-rocm -f "$ONNXRUNTIME_REPO_URL"
+    
+    if [ "$USE_VENV" = true ]; then
+        pip3 install onnxruntime-rocm -f "$ONNXRUNTIME_REPO_URL"
+    else
+        pip3 install onnxruntime-rocm -f "$ONNXRUNTIME_REPO_URL" $PIP_FLAGS
+    fi
+    
     if pip3 list | grep -E "onnxruntime(-rocm)?"; then
         log "INFO" "ONNX Runtime is successfully installed."
     fi
 }
 
+# Function to check ROCm driver status
+check_rocm_status() {
+    log "INFO" "Checking ROCm driver status..."
+    
+    # Check if ROCm devices are available
+    if [ -d "/sys/class/drm" ]; then
+        local amd_devices=$(find /sys/class/drm -name "card*" -exec grep -l "^DRIVER=amdgpu" {}/device/uevent \; 2>/dev/null | wc -l)
+        if [ "$amd_devices" -gt 0 ]; then
+            echo "✅ AMD GPU devices detected: $amd_devices"
+            log "INFO" "AMD GPU devices detected: $amd_devices"
+            
+            # Show GPU details
+            echo "📊 GPU Details:"
+            for card in /sys/class/drm/card*; do
+                if [ -f "$card/device/uevent" ] && grep -q "^DRIVER=amdgpu" "$card/device/uevent"; then
+                    local pci_id=$(grep "^PCI_ID=" "$card/device/uevent" | cut -d'=' -f2)
+                    echo "  - $(basename $card): PCI ID $pci_id"
+                fi
+            done
+        else
+            echo "❌ No AMD GPU devices found"
+            log "WARNING" "No AMD GPU devices found"
+        fi
+    fi
+    
+    # Check render devices (these are needed for compute)
+    local render_devices=$(ls /sys/class/drm/renderD* 2>/dev/null | wc -l)
+    if [ "$render_devices" -gt 0 ]; then
+        echo "✅ Render devices available: $render_devices"
+        log "INFO" "Render devices available: $render_devices"
+    else
+        echo "❌ No render devices found"
+        log "WARNING" "No render devices found"
+    fi
+    
+    # Check if user is in render and video groups
+    local groups=$(groups)
+    if [[ $groups == *"render"* && $groups == *"video"* ]]; then
+        echo "✅ User is in render and video groups"
+        log "INFO" "User is in render and video groups"
+    else
+        echo "❌ User not in required groups (render/video)"
+        log "WARNING" "User not in required groups. Please run: sudo usermod -aG render,video \$(whoami) && newgrp render"
+    fi
+    
+    # Check if ROCm runtime is available
+    if command -v rocm-smi &> /dev/null; then
+        echo "✅ ROCm SMI available"
+        log "INFO" "ROCm SMI available"
+        echo "🔍 ROCm SMI Output:"
+        rocm-smi --showproductname 2>/dev/null || echo "❌ ROCm SMI failed - reboot may be required"
+    else
+        echo "❌ ROCm SMI not found"
+        log "WARNING" "ROCm SMI not found"
+    fi
+    
+    echo "📝 If ROCm tests fail, try rebooting the system first"
+    echo ""
+}
+
 # Function to run tests
 run_tests() {
-    log "INFO" "Running tests..."
-    python3 tests/test_pytorch.py
-    python3 tests/test_onnxruntime.py 
-    python3 tests/test_tensorflow.py
+    log "INFO" "Running comprehensive system tests..."
+    echo "🧪 Running ROCm ML Framework Tests..."
+    echo "=================================="
+    
+    # Check ROCm status first
+    check_rocm_status
+    
+    # Test PyTorch
+    echo "🔥 Testing PyTorch..."
+    if python3 tests/test_pytorch.py; then
+        echo "✅ PyTorch test completed"
+        
+        # Show PyTorch version info
+        python3 -c "
+import torch
+print(f'PyTorch version: {torch.__version__}')
+print(f'CUDA available: {torch.cuda.is_available()}')
+if torch.cuda.is_available():
+    print(f'GPU device: {torch.cuda.get_device_name(0)}')
+    print(f'GPU count: {torch.cuda.device_count()}')
+else:
+    print('⚠️  GPU not available - check ROCm installation')
+"
+    else
+        echo "❌ PyTorch test failed"
+    fi
+    echo ""
+    
+    # Test ONNX Runtime  
+    echo "🤖 Testing ONNX Runtime..."
+    if python3 tests/test_onnxruntime.py; then
+        echo "✅ ONNX Runtime test completed"
+    else
+        echo "❌ ONNX Runtime test failed"
+    fi
+    echo ""
+    
+    # Test TensorFlow
+    echo "🧠 Testing TensorFlow..."
+    if python3 tests/test_tensorflow.py; then
+        echo "✅ TensorFlow test completed"
+    else
+        echo "❌ TensorFlow test failed"
+    fi
+    echo ""
+    
+    echo "🎯 Test Summary:"
+    echo "==============="
+    echo "Check the log.txt file for detailed test results"
+    echo "If GPU tests fail, ensure you have:"
+    echo "  1. Rebooted after driver installation"
+    echo "  2. Added user to render/video groups"
+    echo "  3. AMD GPU compatible with ROCm"
+    
     log "INFO" "Tests completed."
 }
 
@@ -248,7 +467,11 @@ check_and_install_dependencies() {
 # Function to install requirements.txt
 install_requirements() {
     log "INFO" "Installing requirements from requirements.txt..."
-    pip3 install -r requirements.txt
+    if [ "$USE_VENV" = true ]; then
+        pip3 install -r requirements.txt
+    else
+        pip3 install -r requirements.txt $PIP_FLAGS
+    fi
     log "INFO" "Requirements installed."
 }
 
@@ -298,6 +521,9 @@ main() {
     # Parse command line arguments first
     parse_arguments "$@"
     
+    # Detect OS and set appropriate flags
+    detect_os
+    
     check_and_install_dependencies
     
     # Check if a version was provided
@@ -312,8 +538,8 @@ main() {
             log "INFO" "No version specified, using default: $default_version"
             init_rocm_config "$default_version"
         else
-            log "INFO" "Using hardcoded default version: 6.3.4"
-            init_rocm_config "6.3.4"
+            log "INFO" "Using hardcoded default version: 6.4.1"
+            init_rocm_config "6.4.1"
         fi
     fi
     
