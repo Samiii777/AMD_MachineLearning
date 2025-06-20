@@ -9,6 +9,9 @@ versions:
         python_version: "cp310"
         rocm:
           driver_url: "https://repo.radeon.com/amdgpu-install/6.4.1/ubuntu/jammy/amdgpu-install_6.4.60401-1_all.deb"
+          wsl:
+            driver_url: "https://repo.radeon.com/amdgpu-install/6.4.1/ubuntu/jammy/amdgpu-install_6.4.60401-1_all.deb"
+            install_command: "amdgpu-install -y --usecase=wsl,rocm --no-dkms"
         pytorch:
           wheel_urls:
             torch: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/torch-2.6.0%2Brocm6.4.1.git1ded221d-cp310-cp310-linux_x86_64.whl"
@@ -24,6 +27,9 @@ versions:
         python_version: "cp312"
         rocm:
           driver_url: "https://repo.radeon.com/amdgpu-install/6.4.1/ubuntu/noble/amdgpu-install_6.4.60401-1_all.deb"
+          wsl:
+            driver_url: "https://repo.radeon.com/amdgpu-install/6.4.1/ubuntu/noble/amdgpu-install_6.4.60401-1_all.deb"
+            install_command: "amdgpu-install -y --usecase=wsl,rocm --no-dkms"
         pytorch:
           wheel_urls:
             torch: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.1/torch-2.6.0%2Brocm6.4.1.git1ded221d-cp312-cp312-linux_x86_64.whl"
@@ -41,6 +47,9 @@ versions:
         python_version: "cp310"
         rocm:
           driver_url: "https://repo.radeon.com/amdgpu-install/6.3.4/ubuntu/jammy/amdgpu-install_6.3.60304-1_all.deb"
+          wsl:
+            driver_url: "https://repo.radeon.com/amdgpu-install/6.3.4/ubuntu/jammy/amdgpu-install_6.3.60304-1_all.deb"
+            install_command: "amdgpu-install -y --usecase=wsl,rocm --no-dkms"
         pytorch:
           wheel_urls:
             torch: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.3.4/torch-2.4.0%2Brocm6.3.4.git7cecbf6d-cp310-cp310-linux_x86_64.whl"

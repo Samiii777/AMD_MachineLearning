@@ -17,6 +17,8 @@ TENSORFLOW_URL=""
 ONNXRUNTIME_REPO_URL=""
 USE_VENV=false
 VENV_PATH="./venv"
+IS_WSL=false
+WSL_INSTALL_COMMAND=""
 
 # Function to log messages
 log() {
@@ -29,12 +31,29 @@ log() {
 detect_os() {
     log "INFO" "Detecting operating system..."
     
-    # Detect Ubuntu version
+    # First, detect if we're on Linux or WSL
+    local os_type=""
+    
+    # Check if we're running in WSL
+    if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
+        IS_WSL=true
+        os_type="WSL"
+        log "INFO" "Detected WSL (Windows Subsystem for Linux)"
+    elif [ -f /proc/version ] && grep -qi linux /proc/version; then
+        IS_WSL=false
+        os_type="Linux"
+        log "INFO" "Detected native Linux"
+    else
+        log "ERROR" "This script only supports Linux and WSL environments"
+        exit 1
+    fi
+    
+    # Now detect Ubuntu version (works for both Linux and WSL)
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         if [ "$ID" = "ubuntu" ]; then
             UBUNTU_VERSION=$VERSION_ID
-            log "INFO" "Detected Ubuntu $UBUNTU_VERSION"
+            log "INFO" "Detected Ubuntu $UBUNTU_VERSION on $os_type"
             
             # Set pip flags based on Ubuntu version
             case "$UBUNTU_VERSION" in
@@ -57,8 +76,14 @@ detect_os() {
                     PIP_FLAGS=""
                     ;;
             esac
+            
+            # Log additional WSL-specific information
+            if [ "$IS_WSL" = true ]; then
+                log "INFO" "Running in WSL environment - some features may be limited"
+                echo "⚠️  WSL detected - GPU support may be limited depending on WSL version and Windows configuration"
+            fi
         else
-            log "ERROR" "This script only supports Ubuntu. Detected OS: $ID"
+            log "ERROR" "This script only supports Ubuntu. Detected OS: $ID on $os_type"
             exit 1
         fi
     else
@@ -149,7 +174,17 @@ init_rocm_config() {
     
     # Read configuration for the specified version and Ubuntu version
     ROCM_VERSION="$version"
-    DRIVER_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".rocm.driver_url" rocm_config.yml)
+    
+    # Use WSL-specific driver URL if running in WSL, otherwise use regular driver URL
+    if [ "$IS_WSL" = true ]; then
+        DRIVER_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".rocm.wsl.driver_url" rocm_config.yml)
+        WSL_INSTALL_COMMAND=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".rocm.wsl.install_command" rocm_config.yml)
+        log "INFO" "Using WSL-specific driver URL: $DRIVER_URL"
+        log "INFO" "Using WSL installation command: $WSL_INSTALL_COMMAND"
+    else
+        DRIVER_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".rocm.driver_url" rocm_config.yml)
+        log "INFO" "Using native Linux driver URL: $DRIVER_URL"
+    fi
 
     # Set PyTorch package wheel URLs as global variables
     TORCH_URL=$(yq e ".versions.\"$version\".ubuntu.\"$UBUNTU_VERSION\".pytorch.wheel_urls.torch" rocm_config.yml)
@@ -206,7 +241,57 @@ check_and_install_pip_package() {
 install_yq() {
     if ! command -v yq &> /dev/null; then
         log "INFO" "yq could not be found, installing..."
-        sudo snap install yq
+        
+        # Try snap first (for native Linux)
+        if command -v snap &> /dev/null; then
+            log "INFO" "Attempting to install yq via snap..."
+            if sudo snap install yq; then
+                log "INFO" "yq installed successfully via snap"
+                # Add /snap/bin to PATH if not already there
+                if [[ ":$PATH:" != *":/snap/bin:"* ]]; then
+                    export PATH="$PATH:/snap/bin"
+                    log "INFO" "Added /snap/bin to PATH"
+                fi
+                return 0
+            else
+                log "WARNING" "snap installation failed, trying alternative method"
+            fi
+        fi
+        
+        # Alternative installation method using wget (works in WSL)
+        log "INFO" "Installing yq via direct download..."
+        local yq_version="v4.40.5"
+        local arch="linux_amd64"
+        
+        # Create temporary directory for download
+        local temp_dir=$(mktemp -d)
+        cd "$temp_dir"
+        
+        # Download yq binary
+        if wget -q "https://github.com/mikefarah/yq/releases/download/${yq_version}/yq_${arch}.tar.gz"; then
+            # Extract and install
+            tar -xzf "yq_${arch}.tar.gz"
+            sudo mv yq /usr/local/bin/
+            sudo chmod +x /usr/local/bin/yq
+            
+            # Clean up
+            cd - > /dev/null
+            rm -rf "$temp_dir"
+            
+            log "INFO" "yq installed successfully via direct download"
+        else
+            log "ERROR" "Failed to download yq"
+            cd - > /dev/null
+            rm -rf "$temp_dir"
+            return 1
+        fi
+    else
+        log "INFO" "yq is already installed"
+        # Ensure /snap/bin is in PATH if yq is from snap
+        if [[ ":$PATH:" != *":/snap/bin:"* ]] && [ -f "/snap/bin/yq" ]; then
+            export PATH="$PATH:/snap/bin"
+            log "INFO" "Added /snap/bin to PATH for existing yq installation"
+        fi
     fi
 }
 
@@ -224,7 +309,15 @@ install_amd_driver() {
     log "INFO" "Downloading and installing AMD Driver..."
     wget -P /tmp/ "$DRIVER_URL"
     sudo apt install -y /tmp/$(basename "$DRIVER_URL")
-    amdgpu-install -y --usecase=graphics,rocm
+    
+    # Use WSL-specific installation command if running in WSL
+    if [ "$IS_WSL" = true ]; then
+        log "INFO" "Installing AMD GPU driver for WSL environment..."
+        eval "$WSL_INSTALL_COMMAND"
+    else
+        log "INFO" "Installing AMD GPU driver for native Linux environment..."
+        amdgpu-install -y --usecase=graphics,rocm
+    fi
 
     # Add user to render and video group
     sudo usermod -aG render "$(whoami)"
@@ -281,6 +374,36 @@ install_pytorch() {
     fi
 
     log "INFO" "All packages installed successfully."
+    
+    # WSL-specific post-installation step: Remove problematic HSA runtime library
+    if [ "$IS_WSL" = true ]; then
+        log "INFO" "Performing WSL-specific PyTorch post-installation cleanup..."
+        
+        # Find PyTorch installation location
+        local torch_location=$(pip3 show torch | grep Location | awk -F ": " '{print $2}')
+        
+        if [ -n "$torch_location" ] && [ -d "$torch_location/torch/lib" ]; then
+            log "INFO" "Found PyTorch installation at: $torch_location"
+            
+            # Remove problematic HSA runtime library files
+            local lib_dir="$torch_location/torch/lib"
+            if [ -d "$lib_dir" ]; then
+                cd "$lib_dir"
+                if ls libhsa-runtime64.so* >/dev/null 2>&1; then
+                    log "INFO" "Removing problematic HSA runtime library files..."
+                    rm -f libhsa-runtime64.so*
+                    log "INFO" "HSA runtime library files removed successfully"
+                else
+                    log "INFO" "No HSA runtime library files found to remove"
+                fi
+                cd - > /dev/null
+            else
+                log "WARNING" "PyTorch lib directory not found: $lib_dir"
+            fi
+        else
+            log "WARNING" "Could not determine PyTorch installation location"
+        fi
+    fi
 }
 
 # Function to install TensorFlow
