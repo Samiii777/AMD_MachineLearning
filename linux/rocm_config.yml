@@ -1,7 +1,45 @@
 metadata:
-  default_version: "6.4.1"
+  default_version: "6.4.2"
 
 versions:
+  "6.4.2":
+    ubuntu:
+      "22.04":
+        codename: "jammy"
+        python_version: "cp310"
+        rocm:
+          driver_url: "https://repo.radeon.com/amdgpu-install/6.4.2/ubuntu/jammy/amdgpu-install_6.4.60402-1_all.deb"
+          wsl:
+            driver_url: "https://repo.radeon.com/amdgpu-install/6.4.2/ubuntu/jammy/amdgpu-install_6.4.60402-1_all.deb"
+            install_command: "amdgpu-install -y --usecase=wsl,rocm --no-dkms"
+        pytorch:
+          wheel_urls:
+            torch: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/torch-2.6.0%2Brocm6.4.2.git76481f7c-cp310-cp310-linux_x86_64.whl"
+            torchvision: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/torchvision-0.21.0%2Brocm6.4.2.git4040d51f-cp310-cp310-linux_x86_64.whl"
+            triton: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/pytorch_triton_rocm-3.2.0%2Brocm6.4.2.git7e948ebf-cp310-cp310-linux_x86_64.whl"
+            torchaudio: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/torchaudio-2.6.0%2Brocm6.4.2.gitd8831425-cp310-cp310-linux_x86_64.whl"
+        tensorflow:
+          wheel_url: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/tensorflow_rocm-2.18.1-cp310-cp310-manylinux_2_28_x86_64.whl"
+        onnxruntime:
+          repo_url: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/"
+      "24.04":
+        codename: "noble"
+        python_version: "cp312"
+        rocm:
+          driver_url: "https://repo.radeon.com/amdgpu-install/6.4.2/ubuntu/noble/amdgpu-install_6.4.60402-1_all.deb"
+          wsl:
+            driver_url: "https://repo.radeon.com/amdgpu-install/6.4.2/ubuntu/noble/amdgpu-install_6.4.60402-1_all.deb"
+            install_command: "amdgpu-install -y --usecase=wsl,rocm --no-dkms"
+        pytorch:
+          wheel_urls:
+            torch: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/torch-2.6.0%2Brocm6.4.2.git76481f7c-cp312-cp312-linux_x86_64.whl"
+            torchvision: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/torchvision-0.21.0%2Brocm6.4.2.git4040d51f-cp312-cp312-linux_x86_64.whl"
+            triton: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/pytorch_triton_rocm-3.2.0%2Brocm6.4.2.git7e948ebf-cp312-cp312-linux_x86_64.whl"
+            torchaudio: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/torchaudio-2.6.0%2Brocm6.4.2.gitd8831425-cp312-cp312-linux_x86_64.whl"
+        tensorflow:
+          wheel_url: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/tensorflow_rocm-2.18.1-cp312-cp312-manylinux_2_28_x86_64.whl"
+        onnxruntime:
+          repo_url: "https://repo.radeon.com/rocm/manylinux/rocm-rel-6.4.2/"
   "6.4.1":
     ubuntu:
       "22.04":
